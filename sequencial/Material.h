@@ -9,16 +9,17 @@
 
 class Material
 {
-   Material();
+   public:
+      Material();
 
-   Material( const Material& ) = default;
+      Material( const Color& baseColor, const Color& ambientColor, float specular, float diffuse, float shininess );
 
-   Material( Color baseColor, Color ambientColor, float specular, float diffuse, float shininess );
+      Material( const Material& material ) = default;
 
-   Color baseColor;
-   Color ambientColor;
-   float specular;
-   float diffuse;
-   float shininess;
+      Color baseColor;
+      Color ambientColor;
+      float specular;
+      float diffuse;
+      float shininess;
 };
 #endif //SEQUENCIAL_MATERIAL_H
