@@ -19,10 +19,12 @@ int main()
 
    std::vector<std::shared_ptr<SceneObject>> objects;
 
+   Material floor( Color( 220.f, 200.f, 220.f ), Color( 0.f, 0.f, 0.f ), 1.f, 0.5f, 4.f );
    Material orangeMaterial( Color( 220.f, 150.f, 20.f ), Color( 10.f, 5.f, 5.f ), 1.f, 0.5f, 4.f );
    Material greenMaterial( Color( 20.f, 230.f, 10.f ), Color( 5.f, 10.f, 5.f ), 1.f, 0.5f, 4.f );
    objects.emplace_back( std::make_shared<Sphere>( Vector3f{ -20.f, 10.f, 100.f }, greenMaterial, 5.f ) );
    objects.emplace_back( std::make_shared<Sphere>( Vector3f{ 0.f, 0.f, 220.f }, orangeMaterial, 45.f ) );
+   objects.emplace_back( std::make_shared<Plane>( Vector3f( 0.f, -30.f, 0.f ), floor, Vector3f( 0.f, 1.f, 0.f ), 100.f, 100.f ) );
 
    auto start = std::chrono::high_resolution_clock::now();
 
