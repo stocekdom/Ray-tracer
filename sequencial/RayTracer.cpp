@@ -3,8 +3,6 @@
 //
 #include "RayTracer.h"
 
-#include <iostream>
-
 Pixels RayTracer::generateImage( const TracerOptions& options, const std::vector<std::shared_ptr<SceneObject>>& objects,
                                  const std::vector<Light>& lights )
 {
@@ -21,7 +19,7 @@ Pixels RayTracer::generateImage( const TracerOptions& options, const std::vector
       for( auto j = 0u; j < options.imageWidth; ++j )
       {
          // Generate a ray for the current pixel and trace it
-         auto result = traceRay( generateRayForPixel( options, viewport, i, j ), objects );
+         auto result = traceRay( generateRayForPixel( options, viewport, j, i ), objects );
 
          if( !result.closestObject )
             pixels.emplace_back( options.backgroundColor );
@@ -98,10 +96,13 @@ RayTracer::RayTraceResult RayTracer::traceRay( const Ray& ray, const std::vector
 Ray RayTracer::generateRayForPixel( const TracerOptions& options, const Viewport& viewport, unsigned int pixelX,
                                     unsigned int pixelY )
 {
+   // Flip Y: image row 0 is the top row in most image formats/viewers,
+   // but our viewport math starts from the bottom-left corner.
+   unsigned int flippedY = ( options.imageHeight - 1u ) - pixelY;
    // We add the viewport.pixelWidth / 2 to get to the center of the pixel
    float pixelCenterX = viewport.bottomLeftCorner.x + ( viewport.pixelWidth * static_cast<float>( pixelX ) ) +
                         viewport.pixelWidth / 2.0f;
-   float pixelCenterY = viewport.bottomLeftCorner.y + ( viewport.pixelHeight * static_cast<float>( pixelY ) ) +
+   float pixelCenterY = viewport.bottomLeftCorner.y + ( viewport.pixelHeight * static_cast<float>( flippedY ) ) +
                         viewport.pixelHeight / 2.0f;
 
    // Create the pixel coordinates that also act as a ray direction vector since the eye is at 0,0,0 and the direction is P - E
