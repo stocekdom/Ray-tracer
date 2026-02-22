@@ -39,8 +39,7 @@ RawPixels RayTracer::generateRawImage( const TracerOptions& options, const std::
       options.cameraDistance, clampedFOV, options.imageWidth, options.imageHeight, options.backgroundColor
    } );
 
-   RawPixels pixels;
-   pixels.reserve( options.imageWidth * options.imageHeight );
+   RawPixels pixels( options.imageWidth * options.imageHeight * RGBABytes );
 
    for( auto i = 0u; i < options.imageHeight; ++i )
    {
@@ -48,11 +47,12 @@ RawPixels RayTracer::generateRawImage( const TracerOptions& options, const std::
       {
          // Generate a ray for the current pixel and trace it
          auto result = traceRay( generateRayForPixel( options, viewport, j, i ), objects );
+         size_t index = ( i * options.imageWidth + j ) * RGBABytes;
 
          if( !result.closestObject )
-            emplaceColorToRawPixels( pixels, options.backgroundColor );
+            addColorToRawPixels( pixels, options.backgroundColor, index );
          else
-            emplaceColorToRawPixels( pixels, result.closestObject->material.baseColor );
+            addColorToRawPixels( pixels, result.closestObject->material.baseColor, index );
       }
    }
 
@@ -90,6 +90,7 @@ RayTracer::RayTraceResult RayTracer::traceRay( const Ray& ray, const std::vector
       }
    }
 
+   closestResult.hitPoint = ray.startPoint + ( closestResult.distance * ray.direction );
    return { closestResult, closestObject };
 }
 
@@ -111,10 +112,10 @@ Ray RayTracer::generateRayForPixel( const TracerOptions& options, const Viewport
    return Ray{ Vector3f( 0.f, 0.f, 0.f ), pixelCoords };
 }
 
-void RayTracer::emplaceColorToRawPixels( RawPixels& rawPixels, const Color& color )
+void RayTracer::addColorToRawPixels( RawPixels& rawPixels, const Color& color, size_t index )
 {
-   rawPixels.emplace_back( color.R );
-   rawPixels.emplace_back( color.G );
-   rawPixels.emplace_back( color.B );
-   rawPixels.emplace_back( color.alpha );
+   rawPixels[ index ] = color.R;
+   rawPixels[ index + 1 ] = color.G;
+   rawPixels[ index + 2 ] = color.B;
+   rawPixels[ index + 3 ] = color.alpha;
 }

@@ -75,6 +75,7 @@ class RayTracer
 
    private:
       static constexpr float MAX_FOV = 120.f;
+      static constexpr int RGBABytes = 4;
 
       struct Viewport
       {
@@ -100,6 +101,6 @@ class RayTracer
       static Ray generateRayForPixel( const TracerOptions& options, const Viewport& viewport,
                                       unsigned int pixelX, unsigned int pixelY );
 
-      static void emplaceColorToRawPixels( RawPixels& rawPixels, const Color& color );
+      static void addColorToRawPixels( RawPixels& rawPixels, const Color& color, size_t index );
 };
 #endif //SEQUENCIAL_RAYTRACER_H
