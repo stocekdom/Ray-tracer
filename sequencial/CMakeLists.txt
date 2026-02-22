@@ -13,4 +13,5 @@ add_executable(sequencial main.cpp
         Material.cpp
         RayTracer.h
         RayTracer.cpp
+        Math.h
 )

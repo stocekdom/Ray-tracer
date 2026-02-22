@@ -15,6 +15,8 @@ class Color
 
       Color( const Color& c ) = default;
 
+      Color& operator=( const Color& c ) = default;
+
       uint8_t R;
       uint8_t G;
       uint8_t B;
