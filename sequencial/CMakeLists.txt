@@ -14,4 +14,7 @@ add_executable(sequencial main.cpp
         RayTracer.h
         RayTracer.cpp
         Math.h
+        Objects.cpp
+        lodepng.h
+        lodepng.cpp
 )
