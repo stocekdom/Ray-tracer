@@ -6,6 +6,7 @@
 #define SEQUENCIAL_VECTOR_H
 #include <algorithm>
 #include <complex>
+#include <ostream>
 
 template<typename T>
 class Vector3
@@ -77,6 +78,13 @@ class Vector3
 };
 
 template<typename T>
+std::ostream& operator<<( std::ostream& os, const Vector3<T>& v )
+{
+   os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
+   return os;
+}
+
+template<typename T>
 Vector3<T> operator+( const Vector3<T>& lhs, const Vector3<T>& rhs )
 {
    return Vector3<T>( lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z );
@@ -89,6 +97,12 @@ Vector3<T>& operator+=( Vector3<T>& lhs, const Vector3<T>& rhs )
    lhs.y += rhs.y;
    lhs.z += rhs.z;
    return lhs;
+}
+
+template<typename T>
+Vector3<T> operator-( const Vector3<T>& v )
+{
+   return Vector3<T>( -v.x, -v.y, -v.z );
 }
 
 template<typename T>
