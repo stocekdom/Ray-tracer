@@ -5,11 +5,14 @@
 #ifndef SEQUENCIAL_RAYTRACER_H
 #define SEQUENCIAL_RAYTRACER_H
 
+#include <memory>
+
 #include "Color.h"
 #include "Objects.h"
 #include <vector>
 
 using Pixels = std::vector<Color>;
+using RawPixels = std::vector<unsigned char>;
 
 /**
  * @brief Defines the options for generating a ray-traced image
@@ -31,8 +34,6 @@ struct TracerOptions
 class RayTracer
 {
    public:
-      RayTracer();
-
       /**
        * @brief Generates a ray-traced image from the objects, lights, and defined options
        *
@@ -45,6 +46,10 @@ class RayTracer
        * 5. If the material is reflective, we cast another reflective ray recursively until a non-reflective material is found or the ray doesn't hit anything.
        * This new ray acts as a regular ray, and the color of its intersection point is also calculated using the Blinn-Phong model. The resulting color is added back to the original intersection point
        * 6. If the material is refractive, we cast a refraction ray using the Schnell law. This ray also acts as a regular ray, and we add the resulting color back to the original model
+       *
+       * @remarks This ray tracer uses basic ray-tracing without any optimizations and no space partitioning.
+       * For each pixel, a ray is cast and is checked with all scene objects, and a shadow ray made from all intersection points is checked with all lights
+       *
        * @note See more about the generation method in the report: REPORT.md
        *
        * @warning The ray tracer uses the Y axis as up axis.
@@ -54,7 +59,19 @@ class RayTracer
        * @param lights A list of lights in a scene
        * @return A vector of individual pixel colors. The amount is equal to options.imageWidth * options.imageHeight
        */
-      Pixels generateImage( const TracerOptions& options, const std::vector<Object>& objects, const std::vector<Light>& lights );
+      static Pixels generateImage( const TracerOptions& options, const std::vector<std::shared_ptr<SceneObject>>& objects,
+                                   const std::vector<Light>& lights );
+
+      /**
+       * @brief An overload of the generateImage method which returns raw pixel data, that can be used directly with Png libraries
+       * @param options The ray tracer options
+       * @param objects A list of objects in a scene
+       * @param lights A list of lights in a scene
+       * @return A vector of individual pixel data. Each element represents one color channel, and the pixels are stored behind each other in memory as unsigned chars.
+       * E.g. data: R,G,B,A,R,G,B,A The amount is equal to options.imageWidth * options.imageHeight
+       */
+      static RawPixels generateRawImage( const TracerOptions& options, const std::vector<std::shared_ptr<SceneObject>>& objects,
+                                         const std::vector<Light>& lights );
 
    private:
       static constexpr float MAX_FOV = 120.f;
@@ -68,9 +85,21 @@ class RayTracer
          Vector3f bottomLeftCorner;
       };
 
+      // Currently we use smart pointers in the vector for objects which gives use scattered memory and bad cache coherence = slower access, but it gives use easy polymorphism and intersection detection
+      // We could use variant with a variant + visit method, Enum tags or arrays for all types, but this will be used in the CUDA solution
+      struct RayTraceResult
+      {
+         RayHitResult closestHit{};
+         std::shared_ptr<SceneObject> closestObject{};
+      };
+
       static Viewport calculateViewport( const TracerOptions& options );
+
+      static RayTraceResult traceRay( const Ray& ray, const std::vector<std::shared_ptr<SceneObject>>& objects );
 
       static Ray generateRayForPixel( const TracerOptions& options, const Viewport& viewport,
                                       unsigned int pixelX, unsigned int pixelY );
+
+      static void emplaceColorToRawPixels( RawPixels& rawPixels, const Color& color );
 };
 #endif //SEQUENCIAL_RAYTRACER_H
