@@ -52,3 +52,29 @@ bool Sphere::intersects( const Ray& ray, RayHitResult& result ) const
    result.normal.normalize();
    return true;
 }
+
+Plane::Plane( const Vector3f& center, const Material& material, const Vector3f& normal, float halfWidth, float halfDepth )
+   : SceneObject( center, material ), normal( normal ), halfWidth( halfWidth ), halfDepth( halfDepth )
+{
+}
+
+bool Plane::intersects( const Ray& ray, RayHitResult& result ) const
+{
+   auto denominator = Math::dotProduct( normal, ray.direction );
+
+   // Check if we don't divide by 0. If the denominator is 0 the plane and the ray are parallel and never intersect
+   if( std::abs( denominator ) < std::numeric_limits<float>::epsilon() )
+      return false;
+
+   float distance = Math::dotProduct( centerPosition - ray.startPoint, normal ) / denominator;
+
+   if( distance < EPSILON )
+      return false;
+
+   // TODO add a check for planes dimensions to make the intersection work with finite planes
+
+   result.normal = normal;
+   result.distance = distance;
+   result.hitPoint = ray.startPoint + ( result.distance * ray.direction );
+   return true;
+}

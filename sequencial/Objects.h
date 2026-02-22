@@ -71,9 +71,20 @@ class Sphere : public SceneObject
       float radius{};
 };
 
-struct Plane : SceneObject
+class Plane : public SceneObject
 {
-   Vector3f normal;
+   public:
+      Plane() = default;
+
+      Plane( const Vector3f& center, const Material& material, const Vector3f& normal, float halfWidth, float halfDepth );
+
+      bool intersects( const Ray& ray, RayHitResult& result ) const override;
+
+      Vector3f normal;
+      // These values represent the plane dimensions so that we don't have infinite planes.
+      // From the center point we define half-width and half-depth to limit the plane
+      float halfWidth{};
+      float halfDepth{};
 };
 
 struct Block : SceneObject
