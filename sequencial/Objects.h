@@ -21,8 +21,6 @@ struct Ray
 class Light
 {
    public:
-      Light() = default;
-
       Light( const Vector3f& center, const Color& color, float intensity );
 
    Vector3f centerPosition;
