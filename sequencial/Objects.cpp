@@ -3,8 +3,14 @@
 //
 
 #include "Objects.h"
-
 #include "Math.h"
+
+Light::Light( const Vector3f& center, const Color& color, float intensity )
+{
+   this->centerPosition = center;
+   this->lightColor = color;
+   this->intensity = std::pow( 10.f, intensity );
+}
 
 SceneObject::SceneObject( const Vector3f& center, const Material& material ) : centerPosition( center ), material( material )
 {
