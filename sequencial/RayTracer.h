@@ -78,6 +78,7 @@ class RayTracer
    private:
       static constexpr float MAX_FOV = 120.f;
       static constexpr int RGBABytes = 4;
+      static constexpr float SHADOW_RAY_OFFSET = 1.001f;
 
       struct Viewport
       {
@@ -103,6 +104,36 @@ class RayTracer
       static Ray generateRayForPixel( const TracerOptions& options, const Viewport& viewport,
                                       unsigned int pixelX, unsigned int pixelY );
 
+      static Ray generateShadowRay( const Light& light, const Vector3f& intersectionPoint );
+
+      /**
+       * Traces a ray and returns a final color this ray generates.
+       * @param options The ray tracer parameters
+       * @param ray The ray to trace
+       * @param objects A list of objects in the scene
+       * @param lights A list of lights in the scene
+       * @return Returns
+       */
+      static Color getRayTracedColor( const TracerOptions& options, const Ray& ray,
+                                      const std::vector<std::shared_ptr<SceneObject>>& objects,
+                                      const std::vector<Light>& lights );
+
       static void addColorToRawPixels( RawPixels& rawPixels, const Color& color, size_t index );
+
+      /**
+       * Returns the reflexion color of the closest object using the Blinn-Phong reflexion model
+       *
+       * @warning This function doesn't check if the path to the light is obstructed or not
+       *
+       * @param light Current light to calculate the reflexion for
+       * @param closestResult The result of the original ray trace
+       * @param originalRay The original ray used to get the intersection point of an object
+       * @param objects A list of objects in the scene
+       * @return
+       */
+      static Color blinnPhongReflexion( const Light& light, const RayTraceResult& closestResult, const Ray& originalRay,
+                                        const std::vector<std::shared_ptr<SceneObject>>& objects );
+
+      static uint8_t toneMapToUint8( float value );
 };
 #endif //SEQUENCIAL_RAYTRACER_H
