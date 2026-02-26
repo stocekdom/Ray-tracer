@@ -26,9 +26,11 @@ struct TracerOptions
 {
    float cameraDistance;
    float fieldOfView;
+   unsigned int maxRecursionDepth;
    unsigned int imageWidth;
    unsigned int imageHeight;
    Color backgroundColor;
+   Color ambientLightColor;
 };
 
 class RayTracer

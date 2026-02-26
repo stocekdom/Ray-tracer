@@ -7,9 +7,8 @@ Material::Material() : specular( 0 ), diffuse( 0 ), shininess( 0 )
 {
 }
 
-Material::Material( const Color& baseColor, const Color& ambientColor, float specular, float diffuse, float shininess )
+Material::Material( const Color& baseColor, float specular, float diffuse, float shininess )
    : baseColor( baseColor ),
-     ambientColor( ambientColor ),
      specular( specular ),
      diffuse( diffuse ),
      shininess( shininess )

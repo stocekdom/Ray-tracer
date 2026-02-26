@@ -12,12 +12,11 @@ class Material
    public:
       Material();
 
-      Material( const Color& baseColor, const Color& ambientColor, float specular, float diffuse, float shininess );
+      Material( const Color& baseColor, float specular, float diffuse, float shininess );
 
       Material( const Material& material ) = default;
 
       Color baseColor;
-      Color ambientColor;
       float specular;
       float diffuse;
       float shininess;
