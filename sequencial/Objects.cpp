@@ -24,9 +24,7 @@ Sphere::Sphere( const Vector3f& center, const Material& material, float radius )
 // Math behind ray-sphere intersection: https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection.html
 bool Sphere::intersects( const Ray& ray, RayHitResult& result ) const
 {
-   // Actually is Ray.Center - Sphere.Center, but our ray is cast from origin which is always (0,0,0)
-   auto offsetCenter = -centerPosition;
-
+   auto offsetCenter = ray.startPoint - centerPosition;
    // Optional check. However, branching costs something so we ignore it and only construct normalized rays in the Ray-Tracer class
    /*
    if( std::hypot( ray.direction.x, ray.direction.y, ray.direction.z ) != 1.f )
@@ -49,17 +47,15 @@ bool Sphere::intersects( const Ray& ray, RayHitResult& result ) const
    if( root < EPSILON )
    {
       root = -b + discriminantSqrt;
-
       if( root < EPSILON )
          return false;
    }
 
    result.distance = root;
-   // This math is moved into a ray tracer to optimize instruction count
-   /*
-   result.hitPoint = ray.startPoint + ( result.distance * ray.direction );
+   // This math is moved into a ray tracer to optimize instruction count. Normals can be moved to if we switch to enum objects
+   //result.hitPoint = ray.startPoint + ( result.distance * ray.direction );
    result.normal = result.hitPoint - centerPosition;
-   result.normal.normalize();*/
+   result.normal.normalize();
    return true;
 }
 
@@ -85,7 +81,7 @@ bool Plane::intersects( const Ray& ray, RayHitResult& result ) const
 
    // TODO add a check for planes dimensions to make the intersection work with finite planes
 
-   //result.normal = normal;
+   result.normal = normal;
    result.distance = distance;
    //result.hitPoint = ray.startPoint + ( result.distance * ray.direction );
    return true;
