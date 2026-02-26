@@ -5,23 +5,34 @@
 #ifndef SEQUENCIAL_COLOR_H
 #define SEQUENCIAL_COLOR_H
 #include <cstdint>
+#include <iosfwd>
 
+/**
+ * @brief Representation of a color using floats for color channels.
+ *
+ * Uses the RGBA format. The color channels use float, and the alpha uses 8-bit integer
+ * The channel values may be any float value, and the operations on colors don't clamp them. However, for outputting the result, the values will need to be clamped or tone mapped
+ * The range [0,1] of the floats maps to [0,255] of the uint8 required for classic RGB format
+ */
 class Color
 {
    public:
       Color();
 
-      Color( uint8_t R, uint8_t G, uint8_t B, uint8_t alpha = 255 );
+      Color( float R, float G, float B, uint8_t alpha = 255 );
 
       Color( const Color& c ) = default;
 
       Color& operator=( const Color& c ) = default;
 
-      uint8_t R;
-      uint8_t G;
-      uint8_t B;
+      float R;
+      float G;
+      float B;
       uint8_t alpha;
 };
+
+
+std::ostream& operator<<( std::ostream& os, const Color& v );
 
 /**
  * @brief Checks if the two colors are equal
@@ -48,7 +59,7 @@ bool operator!=( const Color& c1, const Color& c2 );
 /**
  * @brief Memberwise addition of the color RGB components.
  *
- * Does a memberwise addition of RGB channels. Alpha channel isn't used in this operation. If the result exceeds 255, the value is clamped to 255
+ * Does a memberwise addition of RGB channels. Alpha channel isn't used in this operation.
  *
  * @param c1 Left operand color
  * @param c2 Right operand color
@@ -59,7 +70,7 @@ Color operator+( const Color& c1, const Color& c2 );
 /**
  * @brief Memberwise addition of the color RGB components.
  *
- * Does a memberwise addition of RGB channels. Alpha channel isn't used in this operation. If the result exceeds 255, the value is clamped to 255
+ * Does a memberwise addition of RGB channels. Alpha channel isn't used in this operation.
  *
  * @param c1 Left operand color
  * @param c2 Right operand color
@@ -70,7 +81,7 @@ Color& operator+=( Color& c1, const Color& c2 );
 /**
  * @brief Memberwise subtraction of the color RGB components.
  *
- * Does a memberwise subtraction of RGB channels. Alpha channel isn't used in this operation. If the result is below 0, the value is clamped to 0
+ * Does a memberwise subtraction of RGB channels. Alpha channel isn't used in this operation.
  *
  * @param c1 Left operand color
  * @param c2 Right operand color
@@ -81,13 +92,25 @@ Color operator-( const Color& c1, const Color& c2 );
 /**
  * @brief Memberwise subtraction of the color RGB components.
  *
- * Does a memberwise subtraction of RGB channels. Alpha channel isn't used in this operation. If the result is below 0, the value is clamped to 0
+ * Does a memberwise subtraction of RGB channels. Alpha channel isn't used in this operation.
  *
  * @param c1 Left operand color
  * @param c2 Right operand color
  * @return Reference to the left color
  */
 Color& operator-=( Color& c1, const Color& c2 );
+
+
+/**
+ * @brief Memberwise multiplication of the color RGB components.
+ *
+ * Does a memberwise multiplication of RGB channels. Alpha channel isn't used in this operation.
+ *
+ * @param c1 Left operand color
+ * @param c2 Right operand color
+ * @return Reference to the left color
+ */
+Color operator*( const Color& c1, const Color& c2 );
 
 /**
  * @brief Multiplies all color components by a scalar factor.
