@@ -13,22 +13,26 @@ int main()
    options.cameraDistance = 50;
    options.imageWidth = 1280;
    options.imageHeight = 720;
-   options.backgroundColor = Color( 10.0f, 10.0f, 10.0f );
+   options.backgroundColor = Color( 0.01f, 0.01f, 0.01f );
+   options.ambientLightColor = Color( 0.1f, 0.1f, 0.1f );
 
    RayTracer rayTracer;
 
    std::vector<std::shared_ptr<SceneObject>> objects;
+   std::vector<Light> lights;
 
-   Material floor( Color( 220.f, 200.f, 220.f ), Color( 0.f, 0.f, 0.f ), 1.f, 0.5f, 4.f );
-   Material orangeMaterial( Color( 220.f, 150.f, 20.f ), Color( 10.f, 5.f, 5.f ), 1.f, 0.5f, 4.f );
-   Material greenMaterial( Color( 20.f, 230.f, 10.f ), Color( 5.f, 10.f, 5.f ), 1.f, 0.5f, 4.f );
-   objects.emplace_back( std::make_shared<Sphere>( Vector3f{ -20.f, 10.f, 100.f }, greenMaterial, 5.f ) );
-   objects.emplace_back( std::make_shared<Sphere>( Vector3f{ 0.f, 0.f, 220.f }, orangeMaterial, 45.f ) );
-   objects.emplace_back( std::make_shared<Plane>( Vector3f( 0.f, -30.f, 0.f ), floor, Vector3f( 0.f, 1.f, 0.f ), 100.f, 100.f ) );
+   Material floor( Color( 0.95f, 0.05f, 0.05f ), 0.1f, 0.9f, 16.f );
+   Material orangeMaterial( Color( 1.f, 0.5f, 0.05f ), 0.45f, 0.3f, 64.f );
+   Material greenMaterial( Color( 0.05f, 1.f, 0.01f ), 0.45f, 0.3f, 64.f );
+   objects.emplace_back( std::make_shared<Sphere>( Vector3f{ -10.f, -10.f, 100.f }, orangeMaterial, 22.f ) );
+   objects.emplace_back( std::make_shared<Sphere>( Vector3f{ -70.f, -20.f, 140.f }, greenMaterial, 12.f ) );
+   objects.emplace_back( std::make_shared<Plane>( Vector3f( 0.f, -50.f, 100.f ), floor, Vector3f( 0.f, 1.f, 0.f ), 100.f, 100.f ) );
+   objects.emplace_back( std::make_shared<Plane>( Vector3f( -120.f, 10.f, 100.f ), floor, Vector3f( 1.f, 0.f, 0.f ), 100.f, 100.f ) );
+   lights.emplace_back( Vector3f( 30.f, 20.f, 10.f ), Color( 0.98f, 0.95f, 0.90f ), 4.f );
 
    auto start = std::chrono::high_resolution_clock::now();
 
-   auto image = RayTracer::generateRawImage( options, objects, {} );
+   auto image = RayTracer::generateRawImage( options, objects, lights );
 
    auto end = std::chrono::high_resolution_clock::now();
    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( end - start );
