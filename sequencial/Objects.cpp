@@ -53,7 +53,7 @@ bool Sphere::intersects( const Ray& ray, RayHitResult& result ) const
 
    result.distance = root;
    // This math is moved into a ray tracer to optimize instruction count. Normals can be moved to if we switch to enum objects
-   //result.hitPoint = ray.startPoint + ( result.distance * ray.direction );
+   result.hitPoint = ray.startPoint + ( result.distance * ray.direction );
    result.normal = result.hitPoint - centerPosition;
    result.normal.normalize();
    return true;
@@ -64,6 +64,7 @@ Plane::Plane( const Vector3f& center, const Material& material, const Vector3f& 
 {
 }
 
+// Math behind plane intersection: https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-plane-and-ray-disk-intersection.html
 bool Plane::intersects( const Ray& ray, RayHitResult& result ) const
 {
    auto denominator = Math::dotProduct( normal, ray.direction );
@@ -72,9 +73,7 @@ bool Plane::intersects( const Ray& ray, RayHitResult& result ) const
    if( std::abs( denominator ) < std::numeric_limits<float>::epsilon() )
       return false;
 
-   //    float distance = Math::dotProduct( centerPosition - ray.startPoint, normal ) / denominator;
-   // ray.startPoint is 0,0,0 and can be omitted
-   float distance = Math::dotProduct( centerPosition, normal ) / denominator;
+   float distance = Math::dotProduct( centerPosition - ray.startPoint, normal ) / denominator;
 
    if( distance < EPSILON )
       return false;
@@ -83,6 +82,6 @@ bool Plane::intersects( const Ray& ray, RayHitResult& result ) const
 
    result.normal = normal;
    result.distance = distance;
-   //result.hitPoint = ray.startPoint + ( result.distance * ray.direction );
+   result.hitPoint = ray.startPoint + ( result.distance * ray.direction );
    return true;
 }
