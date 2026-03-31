@@ -85,7 +85,6 @@ RayTracer::RayTraceResult RayTracer::traceRay( const Ray& ray, const std::vector
       }
    }
 
-   closestResult.hitPoint = ray.startPoint + ( closestResult.distance * ray.direction );
    return { closestResult, closestObject };
 }
 
@@ -146,31 +145,32 @@ void RayTracer::addColorToRawPixels( RawPixels& rawPixels, const Color& color, s
 Color RayTracer::blinnPhongReflexion( const Light& light, const RayTraceResult& closestResult,
                                       const Ray& originalRay, const std::vector<std::shared_ptr<SceneObject>>& objects )
 {
-   auto lightRay = generateShadowRay( light, closestResult.closestHit.hitPoint );
-   lightRay.direction *= SHADOW_RAY_OFFSET;
+   auto offsetHitPoint = closestResult.closestHit.hitPoint + closestResult.closestHit.normal * SHADOW_RAY_OFFSET;
+   auto lightRay = generateShadowRay( light, offsetHitPoint );
+   auto lightDistance = offsetHitPoint.getEuclideanDistance( light.centerPosition );
    auto& material = closestResult.closestObject->material;
 
    // Trace a ray from the closest objects intersect point to the light
    auto lightTraceResult = traceRay( lightRay, objects );
 
-   if( lightTraceResult.closestObject )
+   if( lightTraceResult.closestObject && lightTraceResult.closestHit.distance < lightDistance )
       return {};
 
    auto distance = closestResult.closestHit.hitPoint.getEuclideanDistance( light.centerPosition );
    auto distanceAttenuation = light.intensity / ( distance * distance );
-   // Here, direction of the light ray is normalized
-   auto diffuse = light.lightColor * std::max(
-                     0.0f, Math::dotProduct( lightRay.direction, closestResult.closestHit.normal ) ) *
-                  distanceAttenuation * material.diffuse * material.baseColor;
-   // Using Blinn halfway vector
-   auto halfwayVector = lightRay.direction + originalRay.direction;
+   // Here, the direction of the light ray is normalized
+   auto diffuse = light.lightColor *
+                  std::max( 0.0f, Math::dotProduct( lightRay.direction, closestResult.closestHit.normal ) ) *
+                  material.diffuseColor;
+   // Using Blinn halfway vector. We use '-' since the original ray is from the eye, and we need it reversed. Whole formula: lighDir + (-origRayDir)
+   auto halfwayVector = lightRay.direction - originalRay.direction;
    halfwayVector.normalize();
 
-   auto shininessPart = std::pow( std::max( 0.0f, Math::dotProduct( lightRay.direction, halfwayVector ) ),
+   auto shininessPart = std::pow( std::max( 0.0f, Math::dotProduct( closestResult.closestHit.normal, halfwayVector ) ),
                                   material.shininess );
-   auto specular = light.lightColor * shininessPart * distanceAttenuation * material.specular;
+   auto specular = light.lightColor * shininessPart * material.specular;
 
-   return diffuse + specular;
+   return ( diffuse + specular ) * distanceAttenuation;
 }
 
 uint8_t RayTracer::toneMapToUint8( float value )

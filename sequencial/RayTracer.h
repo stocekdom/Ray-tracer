@@ -78,7 +78,9 @@ class RayTracer
    private:
       static constexpr float MAX_FOV = 120.f;
       static constexpr int RGBABytes = 4;
-      static constexpr float SHADOW_RAY_OFFSET = 1.001f;
+      // Determines how much of the intersection point normal vector is added to the intersection point to offset it from the original intersection point.
+      // This avoids self-intersections and fixes the "shadow acne"
+      static constexpr float SHADOW_RAY_OFFSET = 0.05f;
 
       struct Viewport
       {
