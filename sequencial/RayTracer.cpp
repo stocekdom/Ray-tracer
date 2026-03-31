@@ -175,5 +175,6 @@ Color RayTracer::blinnPhongReflexion( const Light& light, const RayTraceResult& 
 
 uint8_t RayTracer::toneMapToUint8( float value )
 {
-   return static_cast<uint8_t>( std::lround( Math::acesFilmicToneMapping( value ) * 255.0f ) );
+   // TODO magical number for exposure fix
+   return static_cast<uint8_t>( std::lround( Math::gammaCorrection( Math::exposureToneMapping( value, 1.1f ), 1.6f ) * 255.0f ) );
 }
