@@ -16,7 +16,10 @@ class Material
 
       Material( const Material& material ) = default;
 
+      // All vars public for easier access. Make private
       Color baseColor;
+      // Cached value of diffuse * baseColor for faster Phong reflexion model calculation
+      Color diffuseColor;
       float specular;
       float diffuse;
       float shininess;

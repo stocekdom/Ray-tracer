@@ -13,4 +13,5 @@ Material::Material( const Color& baseColor, float specular, float diffuse, float
      diffuse( diffuse ),
      shininess( shininess )
 {
+   diffuseColor = baseColor * diffuse;
 }
