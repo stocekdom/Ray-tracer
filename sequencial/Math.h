@@ -21,10 +21,20 @@ namespace Math
       return std::clamp( value, 0.0f, 1.0f );
    }
 
+   [[nodiscard]] inline float gammaCorrection( float value, float gamma )
+   {
+      return std::pow( value, 1.0f / gamma );
+   }
+
    [[nodiscard]] inline float reinhardToneMapping( float value )
    {
       return value / ( 1.0f + value );
    };
+
+   [[nodiscard]] inline float exposureToneMapping( float value, float exposure )
+   {
+      return 1.0f - std::exp( -value * exposure );
+   }
 
    [[nodiscard]] inline float acesFilmicToneMapping( float value )
    {
