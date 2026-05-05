@@ -2,7 +2,7 @@
 // Created by dominik on 20.02.26.
 //
 #include "GPURayTracer.h"
-#include "Math.h"
+#include "Math.cuh"
 
 Pixels GPURayTracer::generateImage( const TracerOptions& options, const std::vector<std::shared_ptr<SceneObject>>& objects,
                                     const std::vector<Light>& lights )

@@ -4,7 +4,7 @@
 
 #ifndef SEQUENCIAL_TRACEROPTIONS_H
 #define SEQUENCIAL_TRACEROPTIONS_H
-#include "Color.h"
+#include "Color.cuh"
 
 /**
  * @brief Defines the options for generating a ray-traced image
@@ -24,6 +24,5 @@ struct TracerOptions
    Color backgroundColor;
    Color ambientLightColor;
 };
-
 
 #endif //SEQUENCIAL_TRACEROPTIONS_H

@@ -5,10 +5,8 @@
 #ifndef SEQUENCIAL_VECTOR_H
 #define SEQUENCIAL_VECTOR_H
 
-#include "Math.h"
+#include "Math.cuh"
 #include "CUDAAnnotations.h"
-#include <algorithm>
-#include <complex>
 
 template<typename T>
 class Vector3

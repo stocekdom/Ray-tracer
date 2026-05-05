@@ -1,21 +1,14 @@
 //
 // Created by dominik on 20.02.26.
 //
-#include "Color.h"
-#include "Math.h"
+#include "Color.cuh"
 
 Color::Color() : R( 0.f ), G( 0.f ), B( 0.f ), alpha( 0 )
 {
 }
 
-Color::Color( float R, float G, float B, uint8_t alpha ) : R( R ), G( G ), B( B ), alpha( alpha )
+Color::Color( float R, float G, float B, float alpha ) : R( R ), G( G ), B( B ), alpha( alpha )
 {
-}
-
-std::ostream& operator<<( std::ostream& os, const Color& v )
-{
-   os << "(" << v.R << ", " << v.G << ", " << v.B << ", " << v.alpha << ")";
-   return os;
 }
 
 bool operator==( const Color& c1, const Color& c2 )

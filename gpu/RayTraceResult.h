@@ -5,11 +5,12 @@
 #ifndef GPURAYTRACER_RAYTRACERESULT_H
 #define GPURAYTRACER_RAYTRACERESULT_H
 
-#include <limits>
+#include <cfloat>
+#include "Vector.cuh"
 
 struct RayHitResult
 {
-   float distance = std::numeric_limits<float>::infinity();
+   float distance = FLT_MAX;
    Vector3f hitPoint;
    Vector3f normal;
 };
@@ -19,7 +20,7 @@ struct RayHitResult
 struct RayTraceResult
 {
    RayHitResult closestHit{};
-   std::shared_ptr<SceneObject> closestObject{};
+   int closestHitObjectIndex = -1;
 };
 
 #endif //GPURAYTRACER_RAYTRACERESULT_H

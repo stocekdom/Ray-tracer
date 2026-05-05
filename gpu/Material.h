@@ -5,7 +5,7 @@
 #ifndef SEQUENCIAL_MATERIAL_H
 #define SEQUENCIAL_MATERIAL_H
 
-#include "Color.h"
+#include "Color.cuh"
 
 class Material
 {

@@ -5,7 +5,7 @@
 #ifndef GPURAYTRACER_VIEWPORT_H
 #define GPURAYTRACER_VIEWPORT_H
 
-#include "Vector.h"
+#include "Vector.cuh"
 
 struct Viewport
 {

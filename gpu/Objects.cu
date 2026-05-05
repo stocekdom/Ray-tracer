@@ -2,8 +2,9 @@
 // Created by dominik on 21.02.26.
 //
 
-#include "Objects.h"
-#include "Math.h"
+#include "Objects.cuh"
+#include "Math.cuh"
+#include <stdexcept>
 
 Light::Light( const Vector3f& center, const Color& color, float intensity )
 {
@@ -12,41 +13,44 @@ Light::Light( const Vector3f& center, const Color& color, float intensity )
    this->intensity = std::pow( 10.f, intensity );
 }
 
-SceneObject::SceneObject( const Vector3f& center, const Material& material ) : centerPosition( center ), material( material )
+bool SceneObject::intersects( const Ray& ray, RayHitResult& result ) const
 {
-}
-
-Sphere::Sphere( const Vector3f& center, const Material& material, float radius ) : SceneObject( center, material ),
-                                                                                   radius( radius )
-{
+   switch( type )
+   {
+      case ObjectType::SPHERE: return intersectSphere( ray, result );
+      case ObjectType::PLANE: return intersectPlane( ray, result );
+      case ObjectType::BLOCK: return intersectBlock( ray, result );
+      default:
+         throw std::runtime_error( "Invalid object type in intersects method call" );
+   }
 }
 
 // Math behind ray-sphere intersection: https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection.html
-bool Sphere::intersects( const Ray& ray, RayHitResult& result ) const
+bool SceneObject::intersectSphere( const Ray& ray, RayHitResult& result ) const
 {
-   auto offsetCenter = ray.startPoint - centerPosition;
+   const auto offsetCenter = ray.startPoint - centerPosition;
    // Optional check. However, branching costs something so we ignore it and only construct normalized rays in the Ray-Tracer class
    /*
    if( std::hypot( ray.direction.x, ray.direction.y, ray.direction.z ) != 1.f )
       throw std::runtime_error( "Ray direction is not normalized" );
    */
 
-   // We can ignore a since it is equal to Direction^2, which is a dot product of Direction vector.
+   // We can ignore 'a' since it is equal to Direction^2, which is a dot product of Direction vector.
    // However, the direction vector is normalized, so the result is 1, and it won't play a part in the quadratic formula solutions
-   float b = Math::dotProduct( ray.direction, offsetCenter );
-   float c = Math::dotProduct( offsetCenter, offsetCenter ) - ( radius * radius );
+   const float b = dotProduct( ray.direction, offsetCenter );
+   const float c = dotProduct( offsetCenter, offsetCenter ) - ( data.sphere.radius * data.sphere.radius );
    float discriminant = ( b * b ) - c;
 
    // No real solution
-   if( discriminant < std::numeric_limits<float>::epsilon() )
+   if( discriminant < Math::EPSILON )
       return false;
 
-   float discriminantSqrt = std::sqrt( discriminant );
-   float root = -b - discriminantSqrt;
+   discriminant = sqrtf( discriminant );
+   float root = -b - discriminant;
 
    if( root < DISTANCE_EPSILON )
    {
-      root = -b + discriminantSqrt;
+      root = -b + discriminant;
       if( root < DISTANCE_EPSILON )
          return false;
    }
@@ -59,29 +63,29 @@ bool Sphere::intersects( const Ray& ray, RayHitResult& result ) const
    return true;
 }
 
-Plane::Plane( const Vector3f& center, const Material& material, const Vector3f& normal, float halfWidth, float halfDepth )
-   : SceneObject( center, material ), normal( normal ), halfWidth( halfWidth ), halfDepth( halfDepth )
-{
-}
-
 // Math behind plane intersection: https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-plane-and-ray-disk-intersection.html
-bool Plane::intersects( const Ray& ray, RayHitResult& result ) const
+bool SceneObject::intersectPlane( const Ray& ray, RayHitResult& result ) const
 {
-   auto denominator = Math::dotProduct( normal, ray.direction );
+   auto denominator = dotProduct( data.plane.normal, ray.direction );
 
    // Check if we don't divide by 0. If the denominator is 0 the plane and the ray are parallel and never intersect
-   if( std::abs( denominator ) < std::numeric_limits<float>::epsilon() )
+   if( fabsf( denominator ) < Math::EPSILON )
       return false;
 
-   float distance = Math::dotProduct( centerPosition - ray.startPoint, normal ) / denominator;
+   float distance = dotProduct( centerPosition - ray.startPoint, data.plane.normal ) / denominator;
 
    if( distance < DISTANCE_EPSILON )
       return false;
 
    // TODO add a check for planes dimensions to make the intersection work with finite planes
 
-   result.normal = normal;
+   result.normal = data.plane.normal;
    result.distance = distance;
    result.hitPoint = ray.startPoint + ( result.distance * ray.direction );
    return true;
+}
+
+bool SceneObject::intersectBlock( const Ray& ray, RayHitResult& result ) const
+{
+   throw std::runtime_error( "Block intersection not implemented" );
 }

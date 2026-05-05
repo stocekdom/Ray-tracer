@@ -4,8 +4,8 @@
 
 #ifndef SEQUENCIAL_COLOR_H
 #define SEQUENCIAL_COLOR_H
-#include <cstdint>
-#include <iosfwd>
+
+#include "CUDAAnnotations.h"
 
 /**
  * @brief Representation of a color using floats for color channels.
@@ -14,25 +14,23 @@
  * The channel values may be any float value, and the operations on colors don't clamp them. However, for outputting the result, the values will need to be clamped or tone mapped
  * The range [0,1] of the floats maps to [0,255] of the uint8 required for classic RGB format
  */
-class Color
+struct /*alignas(16)*/ Color
 {
    public:
-      Color();
-
-      Color( float R, float G, float B, uint8_t alpha = 255 );
-
-      Color( const Color& c ) = default;
-
-      Color& operator=( const Color& c ) = default;
-
       float R;
       float G;
       float B;
-      uint8_t alpha;
+      float alpha;
+
+      GPU_HD Color();
+
+      GPU_HD Color( float R, float G, float B, float alpha = 1.0 );
+
+      GPU_HD Color( const Color& c ) = default;
+
+      GPU_HD Color& operator=( const Color& c ) = default;
 };
 
-
-std::ostream& operator<<( std::ostream& os, const Color& v );
 
 /**
  * @brief Checks if the two colors are equal
@@ -43,7 +41,7 @@ std::ostream& operator<<( std::ostream& os, const Color& v );
  * @param c2 Right operand color
  * @return True if the colors are equal and false if they are not
  */
-bool operator==( const Color& c1, const Color& c2 );
+GPU_HD bool operator==( const Color& c1, const Color& c2 );
 
 /**
  * @brief Checks if the two colors are not equal
@@ -54,7 +52,7 @@ bool operator==( const Color& c1, const Color& c2 );
  * @param c2 Right operand color
  * @return True if the colors are not equal and false if they are equal
  */
-bool operator!=( const Color& c1, const Color& c2 );
+GPU_HD bool operator!=( const Color& c1, const Color& c2 );
 
 /**
  * @brief Memberwise addition of the color RGB components.
@@ -65,7 +63,7 @@ bool operator!=( const Color& c1, const Color& c2 );
  * @param c2 Right operand color
  * @return The resulting color
  */
-Color operator+( const Color& c1, const Color& c2 );
+GPU_HD Color operator+( const Color& c1, const Color& c2 );
 
 /**
  * @brief Memberwise addition of the color RGB components.
@@ -76,7 +74,7 @@ Color operator+( const Color& c1, const Color& c2 );
  * @param c2 Right operand color
  * @return Reference to the left color
  */
-Color& operator+=( Color& c1, const Color& c2 );
+GPU_HD Color& operator+=( Color& c1, const Color& c2 );
 
 /**
  * @brief Memberwise subtraction of the color RGB components.
@@ -87,7 +85,7 @@ Color& operator+=( Color& c1, const Color& c2 );
  * @param c2 Right operand color
  * @return The resulting color
  */
-Color operator-( const Color& c1, const Color& c2 );
+GPU_HD Color operator-( const Color& c1, const Color& c2 );
 
 /**
  * @brief Memberwise subtraction of the color RGB components.
@@ -98,7 +96,7 @@ Color operator-( const Color& c1, const Color& c2 );
  * @param c2 Right operand color
  * @return Reference to the left color
  */
-Color& operator-=( Color& c1, const Color& c2 );
+GPU_HD Color& operator-=( Color& c1, const Color& c2 );
 
 
 /**
@@ -110,7 +108,7 @@ Color& operator-=( Color& c1, const Color& c2 );
  * @param c2 Right operand color
  * @return Reference to the left color
  */
-Color operator*( const Color& c1, const Color& c2 );
+GPU_HD Color operator*( const Color& c1, const Color& c2 );
 
 /**
  * @brief Multiplies all color components by a scalar factor.
@@ -124,7 +122,7 @@ Color operator*( const Color& c1, const Color& c2 );
  * @param f The scaling factor to apply.
  * @return The resulting color with scaled components.
  */
-Color operator*( const Color& c1, float f );
+GPU_HD Color operator*( const Color& c1, float f );
 
 /**
  * @brief Multiplies all color components by a scalar factor.
@@ -137,6 +135,6 @@ Color operator*( const Color& c1, float f );
  * @param f The scaling factor to apply.
  * @return Reference to the multiplied color
  */
-Color& operator*=( Color& c1, float f );
+GPU_HD Color& operator*=( Color& c1, float f );
 
 #endif //SEQUENCIAL_COLOR_H

@@ -1,51 +1,65 @@
 //
 // Created by dominik on 21.02.26.
 //
-
 #ifndef SEQUENCIAL_MATH_H
 #define SEQUENCIAL_MATH_H
 
+#include "CUDAAnnotations.h"
+#include <algorithm>
 #include <cstdint>
+#include <cmath>
 
+// Uses ifdefs for usage on host and on the device since both use different functions
 namespace Math
 {
    static constexpr float EPSILON = 1e-6;
 
-   [[nodiscard]] inline float saturate( float value )
+   GPU_HD [[nodiscard]] inline float saturate( float value )
    {
+#ifdef __CUDA_ARCH__
+      return __saturatef( value );
+#else
       return std::clamp( value, 0.0f, 1.0f );
+#endif
    }
 
-   [[nodiscard]] inline float gammaCorrection( float value, float gamma )
+   GPU_HD [[nodiscard]] inline float gammaCorrection( float value, float gamma )
    {
+#ifdef __CUDA_ARCH__
+      return powf( value, 1.0f / gamma );
+#else
       return std::pow( value, 1.0f / gamma );
+#endif
    }
 
-   [[nodiscard]] inline float reinhardToneMapping( float value )
+   GPU_HD [[nodiscard]] inline float reinhardToneMapping( float value )
    {
       return value / ( 1.0f + value );
    };
 
-   [[nodiscard]] inline float exposureToneMapping( float value, float exposure )
+   GPU_HD [[nodiscard]] inline float exposureToneMapping( float value, float exposure )
    {
+#ifdef __CUDA_ARCH__
+      return 1.0f - expf( -value * exposure );
+#else
       return 1.0f - std::exp( -value * exposure );
+#endif
    }
 
-   [[nodiscard]] inline float acesFilmicToneMapping( float value )
+   GPU_HD [[nodiscard]] inline float acesFilmicToneMapping( float value )
    {
-      return saturate( value );
-      /*
-      constexpr float a = 2.51f;
-      constexpr float b = 0.03f;
-      constexpr float c = 2.43f;
-      constexpr float d = 0.59f;
-      constexpr float e = 0.14f;
-      return saturate( ( value * ( a * value + b ) ) / ( value * ( c * value + d ) + e ) );*/
+      constexpr float a = 2.51f, b = 0.03f, c = 2.43f, d = 0.59f, e = 0.14f;
+      return saturate( ( value * ( a * value + b ) ) / ( value * ( c * value + d ) + e ) );
    }
 
-   [[nodiscard]] inline float lerp( float a, float b, float factor )
+   GPU_HD [[nodiscard]] inline float lerp( float a, float b, float factor )
    {
+#ifdef __CUDA_ARCH__
+      // Lerp formula using fused multiply add for fewer instructions
+      return fma( factor, b, fma( -factor, a, a ) )
+#else
       return a + factor * ( b - a );
+#endif
    }
 
    [[nodiscard]] inline uint8_t uint8ClampMultiplication( uint8_t value, float factor )
