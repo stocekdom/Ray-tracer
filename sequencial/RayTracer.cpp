@@ -160,13 +160,13 @@ Color RayTracer::blinnPhongReflexion( const Light& light, const RayTraceResult& 
    auto distanceAttenuation = light.intensity / ( distance * distance );
    // Here, the direction of the light ray is normalized
    auto diffuse = light.lightColor *
-                  std::max( 0.0f, Math::dotProduct( lightRay.direction, closestResult.closestHit.normal ) ) *
+                  std::max( 0.0f, VectorOps::dotProduct( lightRay.direction, closestResult.closestHit.normal ) ) *
                   material.diffuseColor;
    // Using Blinn halfway vector. We use '-' since the original ray is from the eye, and we need it reversed. Whole formula: lighDir + (-origRayDir)
    auto halfwayVector = lightRay.direction - originalRay.direction;
    halfwayVector.normalize();
 
-   auto shininessPart = std::pow( std::max( 0.0f, Math::dotProduct( closestResult.closestHit.normal, halfwayVector ) ),
+   auto shininessPart = std::pow( std::max( 0.0f, VectorOps::dotProduct( closestResult.closestHit.normal, halfwayVector ) ),
                                   material.shininess );
    auto specular = light.lightColor * shininessPart * material.specular;
 

@@ -85,34 +85,12 @@ class Vector
          }
       }
 
-      static Vector hadamardProduct( const Vector& lhs, const Vector& rhs )
+      static T dotProduct( const Vector<T, N>& lhs, const Vector<T, N>& rhs )
       {
-         Vector result;
+         T result = 0;
          for( size_t i = 0; i < N; ++i )
          {
-            result[ i ] = lhs[ i ] * rhs[ i ];
-         }
-         return result;
-      }
-
-      // Constructs a new vector with pairwise minimums from lhs and rhs
-      static Vector min( const Vector& lhs, const Vector& rhs )
-      {
-         Vector result;
-         for( size_t i = 0; i < N; ++i )
-         {
-            result[ i ] = std::min( lhs[ i ], rhs[ i ] );
-         }
-         return result;
-      }
-
-      // Constructs a new vector with pairwise maximums from lhs and rhs
-      static Vector max( const Vector& lhs, const Vector& rhs )
-      {
-         Vector result;
-         for( size_t i = 0; i < N; ++i )
-         {
-            result[ i ] = std::max( lhs[ i ], rhs[ i ] );
+            result += lhs[ i ] * rhs[ i ];
          }
          return result;
       }
@@ -165,16 +143,65 @@ struct Vector4 : Vector<T, 4>
    {
    }
 
-   T& x() { return this->members[0]; }
-   T& y() { return this->members[1]; }
-   T& z() { return this->members[2]; }
-   T& w() { return this->members[3]; }
+   T& x() { return this->members[ 0 ]; }
+   T& y() { return this->members[ 1 ]; }
+   T& z() { return this->members[ 2 ]; }
+   T& w() { return this->members[ 3 ]; }
 
-   const T& x() const { return this->members[0]; }
-   const T& y() const { return this->members[1]; }
-   const T& z() const { return this->members[2]; }
-   const T& w() const { return this->members[3]; }
+   const T& x() const { return this->members[ 0 ]; }
+   const T& y() const { return this->members[ 1 ]; }
+   const T& z() const { return this->members[ 2 ]; }
+   const T& w() const { return this->members[ 3 ]; }
 };
+
+namespace VectorOps
+{
+   template<typename T, size_t N>
+   T dotProduct( const Vector<T, N>& lhs, const Vector<T, N>& rhs )
+   {
+      T result = 0;
+      for( size_t i = 0; i < N; ++i )
+      {
+         result += lhs[ i ] * rhs[ i ];
+      }
+      return result;
+   }
+
+   template<typename T, size_t N>
+   Vector<T, N> hadamardProduct( const Vector<T, N>& lhs, const Vector<T, N>& rhs )
+   {
+      Vector<T, N> result;
+      for( size_t i = 0; i < N; ++i )
+      {
+         result[ i ] = lhs[ i ] * rhs[ i ];
+      }
+      return result;
+   }
+
+   // Constructs a new vector with pairwise minimums from lhs and rhs
+   template<typename T, size_t N>
+   static Vector<T, N> min( const Vector<T, N>& lhs, const Vector<T, N>& rhs )
+   {
+      Vector<T, N> result;
+      for( size_t i = 0; i < N; ++i )
+      {
+         result[ i ] = std::min( lhs[ i ], rhs[ i ] );
+      }
+      return result;
+   }
+
+   // Constructs a new vector with pairwise maximums from lhs and rhs
+   template<typename T, size_t N>
+   static Vector<T, N> max( const Vector<T, N>& lhs, const Vector<T, N>& rhs )
+   {
+      Vector<T, N> result;
+      for( size_t i = 0; i < N; ++i )
+      {
+         result[ i ] = std::max( lhs[ i ], rhs[ i ] );
+      }
+      return result;
+   }
+}
 
 template<typename T, size_t N>
 std::ostream& operator<<( std::ostream& os, const Vector<T, N>& v )

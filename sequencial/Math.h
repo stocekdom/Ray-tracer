@@ -10,17 +10,6 @@
 
 namespace Math
 {
-   template<typename T, size_t N>
-   T dotProduct( const Vector<T, N>& lhs, const Vector<T, N>& rhs )
-   {
-      T result = 0;
-      for( size_t i = 0; i < N; ++i )
-      {
-         result += lhs[ i ] * rhs[ i ];
-      }
-      return result;
-   }
-
    [[nodiscard]] inline float saturate( float value )
    {
       return std::clamp( value, 0.0f, 1.0f );
