@@ -25,9 +25,13 @@ int main()
    Material orangeMaterial( Color( 1.f, 0.5f, 0.05f ), 0.45f, 0.3f, 64.f );
    Material greenMaterial( Color( 0.05f, 1.f, 0.01f ), 0.45f, 0.3f, 64.f );
    objects.emplace_back( std::make_shared<Sphere>( Vector3f{ -10.f, -10.f, 100.f }, orangeMaterial, 22.f ) );
-   objects.emplace_back( std::make_shared<Sphere>( Vector3f{ -70.f, -20.f, 140.f }, greenMaterial, 12.f ) );
-   objects.emplace_back( std::make_shared<Plane>( Vector3f( 0.f, -50.f, 100.f ), floor, Vector3f( 0.f, 1.f, 0.f ), 100.f, 100.f ) );
-   objects.emplace_back( std::make_shared<Plane>( Vector3f( -120.f, 10.f, 100.f ), floor, Vector3f( 1.f, 0.f, 0.f ), 100.f, 100.f ) );
+   //objects.emplace_back( std::make_shared<Sphere>( Vector3f{ -70.f, -20.f, 140.f }, greenMaterial, 12.f ) );
+   objects.emplace_back( std::make_shared<Block>( Vector3f{ 50.f, -30.f, 110.f }, greenMaterial,
+                                                  Vector3f( 15.f, 10.f, 18.f ) ) );
+   objects.emplace_back(
+      std::make_shared<Plane>( Vector3f( 0.f, -50.f, 100.f ), floor, Vector3f( 0.f, 1.f, 0.f ), 100.f, 100.f ) );
+   objects.emplace_back( std::make_shared<Plane>( Vector3f( -120.f, 10.f, 100.f ), floor, Vector3f( 1.f, 0.f, 0.f ), 100.f,
+                                                  100.f ) );
    lights.emplace_back( Vector3f( 30.f, 20.f, 10.f ), Color( 0.98f, 0.95f, 0.90f ), 4.f );
 
    auto start = std::chrono::high_resolution_clock::now();
