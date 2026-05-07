@@ -85,16 +85,6 @@ class Vector
          }
       }
 
-      static T dotProduct( const Vector<T, N>& lhs, const Vector<T, N>& rhs )
-      {
-         T result = 0;
-         for( size_t i = 0; i < N; ++i )
-         {
-            result += lhs[ i ] * rhs[ i ];
-         }
-         return result;
-      }
-
    protected:
       T members[ N ];
 };
