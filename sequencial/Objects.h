@@ -13,9 +13,19 @@
 
 struct Ray
 {
+   Ray( const Vector3f& startPoint, const Vector3f& direction )
+      : startPoint( startPoint ), direction( direction ),
+        inverseDirection( Vector3f( 1.f / direction.x(), 1.f / direction.y(), 1.f / direction.z() ) )
+   {
+   }
+
    Vector3f startPoint;
    // This should be normalized
    Vector3f direction;
+   // Inverse of the direction for faster block intersection calculation
+   // WARN has to change if direction changes. Currently is public for easier access
+   // TODO setters
+   Vector3f inverseDirection;
 };
 
 class Light
@@ -23,9 +33,9 @@ class Light
    public:
       Light( const Vector3f& center, const Color& color, float intensity );
 
-   Vector3f centerPosition;
-   Color lightColor;
-   float intensity;
+      Vector3f centerPosition;
+      Color lightColor;
+      float intensity;
 };
 
 // TODO For CUDA use an enum instead of virtual method
@@ -40,7 +50,7 @@ struct RayHitResult
 class SceneObject
 {
    public:
-      SceneObject() = default;
+      SceneObject() = delete;
 
       SceneObject( const Vector3f& center, const Material& material );
 
@@ -65,7 +75,7 @@ class SceneObject
 class Sphere : public SceneObject
 {
    public:
-      Sphere() = default;
+      Sphere() = delete;
 
       Sphere( const Vector3f& center, const Material& material, float radius );
 
@@ -77,7 +87,7 @@ class Sphere : public SceneObject
 class Plane : public SceneObject
 {
    public:
-      Plane() = default;
+      Plane() = delete;
 
       Plane( const Vector3f& center, const Material& material, const Vector3f& normal, float halfWidth, float halfDepth );
 
@@ -90,9 +100,18 @@ class Plane : public SceneObject
       float halfDepth{};
 };
 
-struct Block : SceneObject
+// Axis alligned box for now
+class Block : public SceneObject
 {
-   Vector3f extents;
+   public:
+      Block() = delete;
+
+      Block( const Vector3f& center, const Material& material, const Vector3f& extents );
+
+      bool intersects( const Ray& ray, RayHitResult& result ) const override;
+
+      Vector3f minPoint;
+      Vector3f maxPoint;
 };
 
 #endif //SEQUENCIAL_OBJECTS_H

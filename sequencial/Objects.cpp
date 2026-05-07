@@ -33,8 +33,8 @@ bool Sphere::intersects( const Ray& ray, RayHitResult& result ) const
 
    // We can ignore a since it is equal to Direction^2, which is a dot product of Direction vector.
    // However, the direction vector is normalized, so the result is 1, and it won't play a part in the quadratic formula solutions
-   float b = Math::dotProduct( ray.direction, offsetCenter );
-   float c = Math::dotProduct( offsetCenter, offsetCenter ) - ( radius * radius );
+   float b = VectorOps::dotProduct( ray.direction, offsetCenter );
+   float c = VectorOps::dotProduct( offsetCenter, offsetCenter ) - ( radius * radius );
    float discriminant = ( b * b ) - c;
 
    // No real solution
@@ -67,13 +67,13 @@ Plane::Plane( const Vector3f& center, const Material& material, const Vector3f& 
 // Math behind plane intersection: https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-plane-and-ray-disk-intersection.html
 bool Plane::intersects( const Ray& ray, RayHitResult& result ) const
 {
-   auto denominator = Math::dotProduct( normal, ray.direction );
+   auto denominator = VectorOps::dotProduct( normal, ray.direction );
 
    // Check if we don't divide by 0. If the denominator is 0 the plane and the ray are parallel and never intersect
    if( std::abs( denominator ) < std::numeric_limits<float>::epsilon() )
       return false;
 
-   float distance = Math::dotProduct( centerPosition - ray.startPoint, normal ) / denominator;
+   float distance = VectorOps::dotProduct( centerPosition - ray.startPoint, normal ) / denominator;
 
    if( distance < EPSILON )
       return false;
@@ -83,5 +83,45 @@ bool Plane::intersects( const Ray& ray, RayHitResult& result ) const
    result.normal = normal;
    result.distance = distance;
    result.hitPoint = ray.startPoint + ( result.distance * ray.direction );
+   return true;
+}
+
+// Math for AABB intersection
+// https://tavianator.com/2022/ray_box_boundary.html
+// https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection.html
+Block::Block( const Vector3f& center, const Material& material, const Vector3f& extents ) : SceneObject( center, material )
+{
+   minPoint = center - extents;
+   maxPoint = center + extents;
+}
+
+bool Block::intersects( const Ray& ray, RayHitResult& result ) const
+{
+   Vector3f t1 = VectorOps::hadamardProduct( minPoint - ray.startPoint, ray.inverseDirection );
+   Vector3f t2 = VectorOps::hadamardProduct( maxPoint - ray.startPoint, ray.inverseDirection );
+
+   Vector3f tSmaller = VectorOps::min( t1, t2 );
+   Vector3f tBigger = VectorOps::max( t1, t2 );
+
+   float tMin = std::max( std::max( tSmaller.x(), tSmaller.y() ), tSmaller.z() );
+   float tMax = std::min( std::min( tBigger.x(), tBigger.y() ), tBigger.z() );
+
+   if( tMax < std::max( tMin, 0.f ) )
+      return false;
+
+   bool isInside = tMin < 0.f;
+   result.distance = isInside ? tMax : tMin;
+   result.hitPoint = ray.startPoint + ( result.distance * ray.direction );
+
+   int axis = 0;
+   axis = (tSmaller.y() > tSmaller.x()) ? 1 : axis;
+   axis = (tSmaller.z() > tSmaller[axis]) ? 2 : axis;
+
+   result.normal = Vector3f( 0.f, 0.f, 0.f );
+   result.normal[ axis ] = std::copysign( 1.0f, -ray.direction[ axis ] );
+
+   if( isInside )
+      result.normal = -result.normal;
+
    return true;
 }
