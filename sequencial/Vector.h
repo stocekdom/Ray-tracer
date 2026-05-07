@@ -8,168 +8,314 @@
 #include <complex>
 #include <ostream>
 
-template<typename T>
-class Vector3
+template<typename T, size_t N>
+class Vector
 {
    public:
-      Vector3() : x( 0 ), y( 0 ), z( 0 )
+      Vector()
       {
+         std::fill( members, members + N, T{} );
       }
 
-      Vector3( T x, T y, T z ) : x( x ), y( y ), z( z )
+      template<typename... Args>
+      Vector( Args... args ) : members{ static_cast<T>( args )... }
       {
+         static_assert( sizeof...( Args ) == N, "Invalid number of arguments for Vector constructor" );
       }
 
-      Vector3( T value ) : x( value ), y( value ), z( value )
-      {
-      }
+      Vector( const Vector<T, N>& other ) = default;
 
-      Vector3( const Vector3<T>& other ) = default;
+      Vector( Vector<T, N>&& other ) noexcept = default;
 
-      Vector3( Vector3<T>&& other ) noexcept = default;
+      ~Vector() = default;
 
-      ~Vector3() = default;
+      Vector& operator=( const Vector& ) = default;
 
-      Vector3& operator=( const Vector3& ) = default;
-
-      Vector3& operator=( Vector3&& ) noexcept( std::is_nothrow_move_assignable_v<T> ) = default;
+      Vector& operator=( Vector&& ) noexcept( std::is_nothrow_move_assignable_v<T> ) = default;
 
       template<typename U>
-      explicit Vector3( const Vector3<U>& other )
-         : x( static_cast<T>( other.x ) ),
-           y( static_cast<T>( other.y ) ),
-           z( static_cast<T>( other.z ) )
+      explicit Vector( const Vector<U, N>& other )
       {
+         for( size_t i = 0; i < N; ++i )
+         {
+            members[ i ] = static_cast<T>( other[ i ] );
+         }
       }
 
-      template<typename U>
-      explicit Vector3( Vector3<U>&& other )
-         : x( static_cast<T>( std::move( other.x ) ) ),
-           y( static_cast<T>( std::move( other.y ) ) ),
-           z( static_cast<T>( std::move( other.z ) ) )
+      T& operator[]( size_t index )
       {
+         return members[ index ];
       }
 
-      T x;
-      T y;
-      T z;
+      const T& operator[]( size_t index ) const
+      {
+         return members[ index ];
+      }
 
       // Other methods
-      T getEuclideanDistance( const Vector3<T>& other ) const
+      T getEuclideanDistance( const Vector<T, N>& other ) const
       {
-         return std::sqrt(
-            ( x - other.x ) * ( x - other.x ) + ( y - other.y ) * ( y - other.y ) + ( z - other.z ) * ( z - other.z ) );
+         T sum = 0;
+         for( size_t i = 0; i < N; ++i )
+         {
+            T diff = members[ i ] - other.members[ i ];
+            sum += diff * diff;
+         }
+         return std::sqrt( sum );
       }
 
       void normalize() requires std::floating_point<T>
       {
-         auto length = std::hypot( x, y, z );
+         T lengthSq = 0;
+         for( size_t i = 0; i < N; ++i )
+         {
+            lengthSq += members[ i ] * members[ i ];
+         }
+         T length = std::sqrt( lengthSq );
 
          if( length <= std::numeric_limits<T>::epsilon() )
          {
-            x = y = z = 0;
+            std::fill( members, members + N, T{ 0 } );
             return;
          }
 
-         x /= length;
-         y /= length;
-         z /= length;
+         for( size_t i = 0; i < N; ++i )
+         {
+            members[ i ] /= length;
+         }
       }
+
+      static Vector hadamardProduct( const Vector& lhs, const Vector& rhs )
+      {
+         Vector result;
+         for( size_t i = 0; i < N; ++i )
+         {
+            result[ i ] = lhs[ i ] * rhs[ i ];
+         }
+         return result;
+      }
+
+      // Constructs a new vector with pairwise minimums from lhs and rhs
+      static Vector min( const Vector& lhs, const Vector& rhs )
+      {
+         Vector result;
+         for( size_t i = 0; i < N; ++i )
+         {
+            result[ i ] = std::min( lhs[ i ], rhs[ i ] );
+         }
+         return result;
+      }
+
+      // Constructs a new vector with pairwise maximums from lhs and rhs
+      static Vector max( const Vector& lhs, const Vector& rhs )
+      {
+         Vector result;
+         for( size_t i = 0; i < N; ++i )
+         {
+            result[ i ] = std::max( lhs[ i ], rhs[ i ] );
+         }
+         return result;
+      }
+
+   protected:
+      T members[ N ];
 };
 
 template<typename T>
-std::ostream& operator<<( std::ostream& os, const Vector3<T>& v )
+struct Vector3 : Vector<T, 3>
 {
-   os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
+   using Vector<T, 3>::Vector;
+
+   Vector3() : Vector<T, 3>()
+   {
+   }
+
+   Vector3( T x, T y, T z ) : Vector<T, 3>( x, y, z )
+   {
+   }
+
+   template<typename U>
+   Vector3( const Vector<U, 3>& other ) : Vector<T, 3>( other )
+   {
+   }
+
+   T& x() { return this->members[ 0 ]; }
+   T& y() { return this->members[ 1 ]; }
+   T& z() { return this->members[ 2 ]; }
+
+   const T& x() const { return this->members[ 0 ]; }
+   const T& y() const { return this->members[ 1 ]; }
+   const T& z() const { return this->members[ 2 ]; }
+};
+
+template<typename T>
+struct Vector4 : Vector<T, 4>
+{
+   using Vector<T, 4>::Vector;
+
+   Vector4() : Vector<T, 4>()
+   {
+   }
+
+   Vector4( T x_val, T y_val, T z_val, T w_val ) : Vector<T, 4>( x_val, y_val, z_val, w_val )
+   {
+   }
+
+   Vector4( const Vector<T, 4>& other ) : Vector<T, 4>( other )
+   {
+   }
+
+   T& x() { return this->members[0]; }
+   T& y() { return this->members[1]; }
+   T& z() { return this->members[2]; }
+   T& w() { return this->members[3]; }
+
+   const T& x() const { return this->members[0]; }
+   const T& y() const { return this->members[1]; }
+   const T& z() const { return this->members[2]; }
+   const T& w() const { return this->members[3]; }
+};
+
+template<typename T, size_t N>
+std::ostream& operator<<( std::ostream& os, const Vector<T, N>& v )
+{
+   os << "(";
+   for( size_t i = 0; i < N; ++i )
+   {
+      os << v[ i ] << ( i == N - 1 ? "" : ", " );
+   }
+   os << ")";
    return os;
 }
 
-template<typename T>
-Vector3<T> operator+( const Vector3<T>& lhs, const Vector3<T>& rhs )
+template<typename T, size_t N>
+Vector<T, N> operator+( const Vector<T, N>& lhs, const Vector<T, N>& rhs )
 {
-   return Vector3<T>( lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z );
+   Vector<T, N> result;
+   for( size_t i = 0; i < N; ++i )
+   {
+      result[ i ] = lhs[ i ] + rhs[ i ];
+   }
+   return result;
 }
 
-template<typename T>
-Vector3<T>& operator+=( Vector3<T>& lhs, const Vector3<T>& rhs )
+template<typename T, size_t N>
+Vector<T, N>& operator+=( Vector<T, N>& lhs, const Vector<T, N>& rhs )
 {
-   lhs.x += rhs.x;
-   lhs.y += rhs.y;
-   lhs.z += rhs.z;
+   for( size_t i = 0; i < N; ++i )
+   {
+      lhs[ i ] += rhs[ i ];
+   }
    return lhs;
 }
 
-template<typename T>
-Vector3<T> operator-( const Vector3<T>& v )
+template<typename T, size_t N>
+Vector<T, N> operator-( const Vector<T, N>& v )
 {
-   return Vector3<T>( -v.x, -v.y, -v.z );
+   Vector<T, N> result;
+   for( size_t i = 0; i < N; ++i )
+   {
+      result[ i ] = -v[ i ];
+   }
+   return result;
 }
 
-template<typename T>
-Vector3<T> operator-( const Vector3<T>& lhs, const Vector3<T>& rhs )
+template<typename T, size_t N>
+Vector<T, N> operator-( const Vector<T, N>& lhs, const Vector<T, N>& rhs )
 {
-   return Vector3<T>( lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z );
+   Vector<T, N> result;
+   for( size_t i = 0; i < N; ++i )
+   {
+      result[ i ] = lhs[ i ] - rhs[ i ];
+   }
+   return result;
 }
 
-template<typename T>
-Vector3<T>& operator-=( Vector3<T>& lhs, const Vector3<T>& rhs )
+template<typename T, size_t N>
+Vector<T, N>& operator-=( Vector<T, N>& lhs, const Vector<T, N>& rhs )
 {
-   lhs.x -= rhs.x;
-   lhs.y -= rhs.y;
-   lhs.z -= rhs.z;
+   for( size_t i = 0; i < N; ++i )
+   {
+      lhs[ i ] -= rhs[ i ];
+   }
    return lhs;
 }
 
-template<typename T>
-Vector3<T> operator*( const Vector3<T>& lhs, const T& rhs )
+template<typename T, size_t N>
+Vector<T, N> operator*( const Vector<T, N>& lhs, const T& rhs )
 {
-   return Vector3<T>( lhs.x * rhs, lhs.y * rhs, lhs.z * rhs );
+   Vector<T, N> result;
+   for( size_t i = 0; i < N; ++i )
+   {
+      result[ i ] = lhs[ i ] * rhs;
+   }
+   return result;
 }
 
-template<typename T>
-Vector3<T> operator*( const T& lhs, const Vector3<T>& rhs )
+template<typename T, size_t N>
+Vector<T, N> operator*( const T& lhs, const Vector<T, N>& rhs )
 {
-   return Vector3<T>( lhs * rhs.x, lhs * rhs.y, lhs * rhs.z );
+   Vector<T, N> result;
+   for( size_t i = 0; i < N; ++i )
+   {
+      result[ i ] = lhs * rhs[ i ];
+   }
+   return result;
 }
 
-template<typename T>
-Vector3<T>& operator*=( Vector3<T>& lhs, const T& rhs )
+template<typename T, size_t N>
+Vector<T, N>& operator*=( Vector<T, N>& lhs, const T& rhs )
 {
-   lhs.x *= rhs;
-   lhs.y *= rhs;
-   lhs.z *= rhs;
+   for( size_t i = 0; i < N; ++i )
+   {
+      lhs[ i ] *= rhs;
+   }
    return lhs;
 }
 
-template<typename T>
-Vector3<T> operator/( const Vector3<T>& lhs, const T& rhs )
+template<typename T, size_t N>
+Vector<T, N> operator/( const Vector<T, N>& lhs, const T& rhs )
 {
-   return Vector3<T>( lhs.x / rhs, lhs.y / rhs, lhs.z / rhs );
+   Vector<T, N> result;
+   for( size_t i = 0; i < N; ++i )
+   {
+      result[ i ] = lhs[ i ] / rhs;
+   }
+   return result;
 }
 
-template<typename T>
-Vector3<T>& operator/=( Vector3<T>& lhs, const T& rhs )
+template<typename T, size_t N>
+Vector<T, N>& operator/=( Vector<T, N>& lhs, const T& rhs )
 {
-   lhs.x /= rhs;
-   lhs.y /= rhs;
-   lhs.z /= rhs;
+   for( size_t i = 0; i < N; ++i )
+   {
+      lhs[ i ] /= rhs;
+   }
    return lhs;
 }
 
-template<typename T>
-bool operator==( const Vector3<T>& lhs, const Vector3<T>& rhs )
+template<typename T, size_t N>
+bool operator==( const Vector<T, N>& lhs, const Vector<T, N>& rhs )
 {
-   return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
+   for( size_t i = 0; i < N; ++i )
+   {
+      if( lhs[ i ] != rhs[ i ] ) return false;
+   }
+   return true;
 }
 
-template<typename T>
-bool operator!=( const Vector3<T>& lhs, const Vector3<T>& rhs )
+template<typename T, size_t N>
+bool operator!=( const Vector<T, N>& lhs, const Vector<T, N>& rhs )
 {
-   return lhs.x != rhs.x || lhs.y != rhs.y || lhs.z != rhs.z;
+   return !( lhs == rhs );
 }
 
 typedef Vector3<double> Vector3d;
 typedef Vector3<float> Vector3f;
 typedef Vector3<int> Vector3i;
+
+typedef Vector4<double> Vector4d;
+typedef Vector4<float> Vector4f;
+typedef Vector4<int> Vector4i;
 
 #endif //SEQUENCIAL_VECTOR_H

@@ -95,9 +95,9 @@ Ray RayTracer::generateRayForPixel( const TracerOptions& options, const Viewport
    // but our viewport math starts from the bottom-left corner.
    unsigned int flippedY = ( options.imageHeight - 1u ) - pixelY;
    // We add the viewport.pixelWidth / 2 to get to the center of the pixel
-   float pixelCenterX = viewport.bottomLeftCorner.x + ( viewport.pixelWidth * static_cast<float>( pixelX ) ) +
+   float pixelCenterX = viewport.bottomLeftCorner.x() + ( viewport.pixelWidth * static_cast<float>( pixelX ) ) +
                         viewport.pixelWidth / 2.0f;
-   float pixelCenterY = viewport.bottomLeftCorner.y + ( viewport.pixelHeight * static_cast<float>( flippedY ) ) +
+   float pixelCenterY = viewport.bottomLeftCorner.y() + ( viewport.pixelHeight * static_cast<float>( flippedY ) ) +
                         viewport.pixelHeight / 2.0f;
 
    // Create the pixel coordinates that also act as a ray direction vector since the eye is at 0,0,0 and the direction is P - E
@@ -145,7 +145,7 @@ void RayTracer::addColorToRawPixels( RawPixels& rawPixels, const Color& color, s
 Color RayTracer::blinnPhongReflexion( const Light& light, const RayTraceResult& closestResult,
                                       const Ray& originalRay, const std::vector<std::shared_ptr<SceneObject>>& objects )
 {
-   auto offsetHitPoint = closestResult.closestHit.hitPoint + closestResult.closestHit.normal * SHADOW_RAY_OFFSET;
+   Vector3f offsetHitPoint = closestResult.closestHit.hitPoint + closestResult.closestHit.normal * SHADOW_RAY_OFFSET;
    auto lightRay = generateShadowRay( light, offsetHitPoint );
    auto lightDistance = offsetHitPoint.getEuclideanDistance( light.centerPosition );
    auto& material = closestResult.closestObject->material;

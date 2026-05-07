@@ -10,10 +10,15 @@
 
 namespace Math
 {
-   template<typename T>
-   T dotProduct( const Vector3<T>& lhs, const Vector3<T>& rhs )
+   template<typename T, size_t N>
+   T dotProduct( const Vector<T, N>& lhs, const Vector<T, N>& rhs )
    {
-      return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z;
+      T result = 0;
+      for( size_t i = 0; i < N; ++i )
+      {
+         result += lhs[ i ] * rhs[ i ];
+      }
+      return result;
    }
 
    [[nodiscard]] inline float saturate( float value )
