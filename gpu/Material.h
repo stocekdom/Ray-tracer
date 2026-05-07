@@ -2,8 +2,8 @@
 // Created by dominik on 20.02.26.
 //
 
-#ifndef SEQUENCIAL_MATERIAL_H
-#define SEQUENCIAL_MATERIAL_H
+#ifndef GPURAYTRACER_MATERIAL_H
+#define GPURAYTRACER_MATERIAL_H
 
 #include "Color.cuh"
 
@@ -24,4 +24,4 @@ class Material
       float diffuse;
       float shininess;
 };
-#endif //SEQUENCIAL_MATERIAL_H
+#endif //GPURAYTRACER_MATERIAL_H

@@ -2,8 +2,8 @@
 // Created by dominik on 18.02.26.
 //
 
-#ifndef SEQUENCIAL_OBJECTS_H
-#define SEQUENCIAL_OBJECTS_H
+#ifndef GPURAYTRACER_OBJECTS_H
+#define GPURAYTRACER_OBJECTS_H
 
 #include "Color.cuh"
 #include "Material.h"
@@ -49,7 +49,8 @@ struct PlaneData
 
 struct BlockData
 {
-   Vector3f extents;
+   Vector3f minPoint;
+   Vector3f maxPoint;
 };
 
 struct SceneObject
@@ -67,7 +68,7 @@ struct SceneObject
 
    static constexpr float DISTANCE_EPSILON = 0.0001f;
 
-   GPU_HOST static SceneObject makeSphere( const Vector3f& center, const Material& material, float radius )
+   HOST_DEV static SceneObject makeSphere( const Vector3f& center, const Material& material, float radius )
    {
       ObjectData data{};
       data.sphere = SphereData{ radius };
@@ -85,7 +86,7 @@ struct SceneObject
    static SceneObject makeBlock( const Vector3f& center, const Material& material, const Vector3f& extents )
    {
       ObjectData data{};
-      data.block = BlockData{ extents };
+      data.block = BlockData{ center - extents, center + extents };
       return SceneObject{ center, material, ObjectType::PLANE, data };
    }
 
@@ -108,4 +109,4 @@ struct SceneObject
       GPU_DEV bool intersectBlock( const Ray& ray, RayHitResult& result ) const;
 };
 
-#endif //SEQUENCIAL_OBJECTS_H
+#endif //GPURAYTRACER_OBJECTS_H

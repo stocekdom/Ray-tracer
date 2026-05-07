@@ -2,8 +2,8 @@
 // Created by dominik on 18.02.26.
 //
 
-#ifndef SEQUENCIAL_COLOR_H
-#define SEQUENCIAL_COLOR_H
+#ifndef GPURAYTRACER_COLOR_H
+#define GPURAYTRACER_COLOR_H
 
 #include "CUDAAnnotations.h"
 
@@ -137,4 +137,4 @@ GPU_HD Color operator*( const Color& c1, float f );
  */
 GPU_HD Color& operator*=( Color& c1, float f );
 
-#endif //SEQUENCIAL_COLOR_H
+#endif //GPURAYTRACER_COLOR_H

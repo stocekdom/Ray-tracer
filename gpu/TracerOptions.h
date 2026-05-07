@@ -2,8 +2,8 @@
 // Created by dominik on 30.03.26.
 //
 
-#ifndef SEQUENCIAL_TRACEROPTIONS_H
-#define SEQUENCIAL_TRACEROPTIONS_H
+#ifndef GPURAYTRACER_TRACEROPTIONS_H
+#define GPURAYTRACER_TRACEROPTIONS_H
 #include "Color.cuh"
 
 /**
@@ -25,4 +25,4 @@ struct TracerOptions
    Color ambientLightColor;
 };
 
-#endif //SEQUENCIAL_TRACEROPTIONS_H
+#endif //GPURAYTRACER_TRACEROPTIONS_H

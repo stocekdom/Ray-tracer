@@ -87,13 +87,14 @@ Color blinnPhongReflexion( const Light& light, const RayTraceResult& closestResu
 
    // Here, the direction of the light ray is normalized
    auto diffuse = light.lightColor *
-                  max( 0.0f, dotProduct( lightRay.direction, closestResult.closestHit.normal ) ) *
+                  max( 0.0f, VectorOps::dotProduct( lightRay.direction, closestResult.closestHit.normal ) ) *
                   material.diffuseColor;
    // Using Blinn halfway vector. We use '-' since the original ray is from the eye, and we need it reversed. Whole formula: lighDir + (-origRayDir)
    auto halfwayVector = lightRay.direction - originalRay.direction;
    halfwayVector.normalize();
 
-   auto shininessPart = powf( max( 0.0f, dotProduct( closestResult.closestHit.normal, halfwayVector ) ), material.shininess );
+   auto shininessPart = powf( max( 0.0f, VectorOps::dotProduct( closestResult.closestHit.normal, halfwayVector ) ),
+                              material.shininess );
    auto specular = light.lightColor * shininessPart * material.specular;
 
    return ( diffuse + specular ) * distanceAttenuation;
@@ -139,7 +140,8 @@ __global__ void rayTracerKernel( const ReadOnlyGPUArrayView<SceneObject>& object
 
 void launchKernel( const ReadOnlyGPUArrayView<SceneObject>& objects,
                    const ReadOnlyGPUArrayView<Light>& lights,
-                   const TracerOptions& options )
+                   const TracerOptions& options,
+                   GPUArrayView<Color>& output )
 {
-   rayTracerKernel<<<32,256>>>();
+   rayTracerKernel<<<32,256>>>( objects, lights, options, output );
 }

@@ -2,8 +2,8 @@
 // Created by dominik on 20.02.26.
 //
 
-#ifndef SEQUENCIAL_RAYTRACER_H
-#define SEQUENCIAL_RAYTRACER_H
+#ifndef GPURAYTRACER_RAYTRACER_H
+#define GPURAYTRACER_RAYTRACER_H
 
 #include "Objects.cuh"
 #include "TracerOptions.h"
@@ -68,4 +68,4 @@ class GPURayTracer
 
       static uint8_t toneMapToUint8( float value );
 };
-#endif //SEQUENCIAL_RAYTRACER_H
+#endif //GPURAYTRACER_RAYTRACER_H

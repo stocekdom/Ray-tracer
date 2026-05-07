@@ -11,6 +11,7 @@
 
 void launchKernel( const ReadOnlyGPUArrayView<SceneObject>& objects,
                    const ReadOnlyGPUArrayView<Light>& lights,
-                   const TracerOptions& options );
+                   const TracerOptions& options,
+                   GPUArrayView<Color>& output );
 
 #endif //GPURAYTRACER_RAYTRACERKERNEL_CUH

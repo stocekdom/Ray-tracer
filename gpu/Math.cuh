@@ -1,8 +1,8 @@
 //
 // Created by dominik on 21.02.26.
 //
-#ifndef SEQUENCIAL_MATH_H
-#define SEQUENCIAL_MATH_H
+#ifndef GPURAYTRACER_MATH_H
+#define GPURAYTRACER_MATH_H
 
 #include "CUDAAnnotations.h"
 #include <algorithm>
@@ -92,4 +92,4 @@ namespace Math
    }
 }
 
-#endif //SEQUENCIAL_MATH_H
+#endif //GPURAYTRACER_MATH_H

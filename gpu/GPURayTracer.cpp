@@ -59,7 +59,7 @@ RawPixels GPURayTracer::generateRawImage( const TracerOptions& options, const st
    return pixels;
 }
 
-GPURayTracer::Viewport GPURayTracer::calculateViewport( const TracerOptions& options )
+Viewport GPURayTracer::calculateViewport( const TracerOptions& options )
 {
    float halfWidth = options.cameraDistance * std::tan( options.fieldOfView / 2.0f );
    float aspectRatio = static_cast<float>( options.imageHeight ) / static_cast<float>( options.imageWidth );

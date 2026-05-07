@@ -87,5 +87,31 @@ bool SceneObject::intersectPlane( const Ray& ray, RayHitResult& result ) const
 
 bool SceneObject::intersectBlock( const Ray& ray, RayHitResult& result ) const
 {
-   throw std::runtime_error( "Block intersection not implemented" );
+   Vector3f t1 = VectorOps::hadamardProduct( minPoint - ray.startPoint, ray.inverseDirection );
+   Vector3f t2 = VectorOps::hadamardProduct( maxPoint - ray.startPoint, ray.inverseDirection );
+
+   Vector3f tSmaller = VectorOps::min( t1, t2 );
+   Vector3f tBigger = VectorOps::max( t1, t2 );
+
+   float tMin = std::max( std::max( tSmaller.x(), tSmaller.y() ), tSmaller.z() );
+   float tMax = std::min( std::min( tBigger.x(), tBigger.y() ), tBigger.z() );
+
+   if( tMax < std::max( tMin, 0.f ) )
+      return false;
+
+   bool isInside = tMin < 0.f;
+   result.distance = isInside ? tMax : tMin;
+   result.hitPoint = ray.startPoint + ( result.distance * ray.direction );
+
+   int axis = 0;
+   axis = (tSmaller.y() > tSmaller.x()) ? 1 : axis;
+   axis = (tSmaller.z() > tSmaller[axis]) ? 2 : axis;
+
+   result.normal = Vector3f( 0.f, 0.f, 0.f );
+   result.normal[ axis ] = std::copysign( 1.0f, -ray.direction[ axis ] );
+
+   if( isInside )
+      result.normal = -result.normal;
+
+   return true;
 }

@@ -22,7 +22,7 @@ struct ReadOnlyGPUArrayView
 
       GPU_HD const T& operator[]( unsigned int index ) const;
 
-      GPU_HOST const T& at( unsigned int index ) const;
+      HOST_DEV const T& at( unsigned int index ) const;
 
       GPU_HD [[nodiscard]] bool inBounds( unsigned int index ) const;
 
@@ -40,7 +40,7 @@ struct GPUArrayView : ReadOnlyGPUArrayView<T>
 
    GPU_HD T& operator[]( unsigned int index );
 
-   GPU_HOST T& at( unsigned int index );
+   HOST_DEV T& at( unsigned int index );
 };
 
 template<typename T>

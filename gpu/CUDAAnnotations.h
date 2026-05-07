@@ -9,7 +9,7 @@
 
 #define GPU_HD __host__ __device__
 #define GPU_DEV __device__
-#define GPU_HOST __host__
+#define HOST_DEV __host__
 #define GPU_KERNEL __global__
 
 #endif //GPURAYTRACER_CUDAANNOTATIONS_H
