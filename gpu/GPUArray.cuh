@@ -5,10 +5,10 @@
 #ifndef GPURAYTRACER_ARRAY_H
 #define GPURAYTRACER_ARRAY_H
 
-#include <stdexcept>
-
+#include "ErrorHandle.h"
 #include "CUDAAnnotations.cuh"
 #include <vector>
+#include <stdexcept>
 
 template<typename T>
 struct ReadOnlyGPUArrayView
@@ -192,7 +192,7 @@ void GPUArray<T>::upload( const T* hostData, size_t size )
    if( size > _size )
       throw std::runtime_error( "GPUArray upload: upload size exceeds allocated size of the array" );
 
-   cudaMemcpy( this->data, hostData, size * sizeof( T ), cudaMemcpyHostToDevice );
+   HANDLE_ERROR( cudaMemcpy( this->data, hostData, size * sizeof( T ), cudaMemcpyHostToDevice ) );
 }
 
 template<typename T>
@@ -207,7 +207,7 @@ void GPUArray<T>::download( T* hostData, size_t size ) const
    if( size > _size )
       throw std::runtime_error( "GPUArray download: download size exceeds allocated size of the array" );
 
-   cudaMemcpy( hostData, this->data, size * sizeof( T ), cudaMemcpyDeviceToHost );
+   HANDLE_ERROR( cudaMemcpy( hostData, this->data, size * sizeof( T ), cudaMemcpyDeviceToHost ) );
 }
 
 template<typename T>
@@ -231,13 +231,13 @@ ReadOnlyGPUArrayView<T> GPUArray<T>::readOnlyView() const
 template<typename T>
 void GPUArray<T>::allocate( size_t size )
 {
-   cudaMalloc( reinterpret_cast<void**>( &data ), size * sizeof( T ) );
+   HANDLE_ERROR( cudaMalloc( reinterpret_cast<void**>( &data ), size * sizeof( T ) ) );
 }
 
 template<typename T>
 void GPUArray<T>::free() const
 {
-   cudaFree( data );
+   HANDLE_ERROR( cudaFree( data ) );
 }
 
 #endif //GPURAYTRACER_ARRAY_H
