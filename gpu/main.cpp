@@ -1,45 +1,56 @@
 #include "GPURayTracer.cuh"
 #include "lodepng.h"
-#include <memory>
 #include <chrono>
 #include <iostream>
 
-float4 makeFloat4( float x, float y, float z )
+#include "Levels.h"
+
+void chooseLevel( int levelID, TracerOptions& options, std::vector<SceneObject>& objects, std::vector<Light>& lights )
 {
-   return float4{ x, y, z, 0.f };
+   // TODO ugly, use map
+   switch( levelID )
+   {
+      case 1:
+         BasicLevel().loadLevel( options, objects, lights );
+         break;
+      case 2:
+         LightColors().loadLevel( options, objects, lights );
+         break;
+      case 3:
+         HighResLights().loadLevel( options, objects, lights );
+         break;
+      case 4:
+         LightCombination().loadLevel( options, objects, lights );
+         break;
+      case 5:
+         Space().loadLevel( options, objects, lights );
+         break;
+      default:
+         throw std::runtime_error( "Invalid level ID" );
+   }
 }
 
-int main()
+int main( int argc, char** argv )
 {
    static constexpr int RGBABytes = 4;
 
+   if( argc != 2 )
+   {
+      std::cout << "Usage: " << argv[ 0 ] << " <level ID>" << std::endl;
+      std::cout << "Available levels: 1, 2, 3, 4, 5, 6" << std::endl;
+      return -1;
+   }
+
+   // TODO better invalid string handling
+   int levelID = std::stoi( argv[ 1 ] );
+
    TracerOptions options;
-   options.fieldOfView = 90;
-   options.cameraDistance = 50;
-   options.imageWidth = 1280;
-   options.imageHeight = 720;
-   options.backgroundColor = Color( 0.01f, 0.01f, 0.01f );
-   options.ambientLightColor = Color( 0.1f, 0.1f, 0.1f );
-
-   GPURayTracer rayTracer;
-
    std::vector<SceneObject> objects;
    std::vector<Light> lights;
 
-   Material floor( Color( 0.95f, 0.05f, 0.05f ), 0.1f, 0.9f, 16.f );
-   Material orangeMaterial( Color( 1.f, 0.5f, 0.05f ), 0.45f, 0.3f, 64.f );
-   Material greenMaterial( Color( 0.05f, 1.f, 0.01f ), 0.45f, 0.3f, 64.f );
-   objects.emplace_back( SceneObject::makeSphere( makeFloat4( -10.f, -10.f, 100.f ), orangeMaterial, 22.f ) );
-   objects.emplace_back(
-      SceneObject::makeBlock( makeFloat4( 50.f, -30.f, 110.f ), greenMaterial, makeFloat4( 12.f, 10.f, 15.f ) ) );
+   chooseLevel( levelID, options, objects, lights );
 
-   objects.emplace_back(
-      SceneObject::makePlane( makeFloat4( 0.f, -50.f, 100.f ), floor, makeFloat4( 0.f, 1.f, 0.f ), 100.f, 100.f ) );
-
-   objects.emplace_back(
-      SceneObject::makePlane( makeFloat4( -120.f, 10.f, 100.f ), floor, makeFloat4( 1.f, 0.f, 0.f ), 100.f, 100.f ) );
-
-   lights.emplace_back( makeFloat4( 30.f, 20.f, 10.f ), Color( 0.98f, 0.95f, 0.90f ), 4.f );
+   GPURayTracer rayTracer;
 
    auto start = std::chrono::high_resolution_clock::now();
 
@@ -65,5 +76,5 @@ int main()
    }
 */
    // Generating png
-   lodepng::encode( "output.png", image, options.imageWidth, options.imageHeight );
+   lodepng::encode( "output" + std::to_string( levelID ) + ".png", image, options.imageWidth, options.imageHeight );
 }

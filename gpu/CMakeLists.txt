@@ -33,6 +33,8 @@ add_executable(raytracer main.cpp
         RayTracerKernel.cuh
         GPUArray.cuh
         ErrorHandle.h
+        Levels.h
+        Levels.cpp
 )
 
 target_link_libraries(raytracer PRIVATE CUDA::cudart)
