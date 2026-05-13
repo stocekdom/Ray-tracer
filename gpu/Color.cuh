@@ -14,23 +14,21 @@
  * The channel values may be any float value, and the operations on colors don't clamp them. However, for outputting the result, the values will need to be clamped or tone mapped
  * The range [0,1] of the floats maps to [0,255] of the uint8 required for classic RGB format
  */
-struct /*alignas(16)*/ Color
+struct alignas(16) Color
 {
-   public:
-      float R;
-      float G;
-      float B;
-      float alpha;
+   float R;
+   float G;
+   float B;
+   float alpha;
 
-      GPU_HD Color();
+   GPU_HD Color();
 
-      GPU_HD Color( float R, float G, float B, float alpha = 1.0 );
+   GPU_HD Color( float R, float G, float B, float alpha = 1.0 );
 
-      GPU_HD Color( const Color& c ) = default;
+   GPU_HD Color( const Color& c ) = default;
 
-      GPU_HD Color& operator=( const Color& c ) = default;
+   GPU_HD Color& operator=( const Color& c ) = default;
 };
-
 
 /**
  * @brief Checks if the two colors are equal
@@ -97,7 +95,6 @@ GPU_HD Color operator-( const Color& c1, const Color& c2 );
  * @return Reference to the left color
  */
 GPU_HD Color& operator-=( Color& c1, const Color& c2 );
-
 
 /**
  * @brief Memberwise multiplication of the color RGB components.
