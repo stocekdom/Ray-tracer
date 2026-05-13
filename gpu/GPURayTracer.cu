@@ -2,9 +2,6 @@
 // Created by dominik on 20.02.26.
 //
 #include "GPURayTracer.cuh"
-
-#include <chrono>
-#include <iostream>
 #include "GPUArray.cuh"
 #include "Math.cuh"
 #include "RayTracerKernel.cuh"
@@ -53,12 +50,7 @@ RawPixels GPURayTracer::generateRawImage( const TracerOptions& options, const st
    gpuObjects.upload( objects );
    gpuLights.upload( lights );
 
-   auto start = std::chrono::high_resolution_clock::now();
    launchKernel( gpuObjects.readOnlyView(), gpuLights.readOnlyView(), options, viewport, gpuPixels.view() );
-
-   auto end = std::chrono::high_resolution_clock::now();
-   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( end - start );
-   std::cout << "Kernel only time: " << duration.count() << " ms" << std::endl;
 
    gpuPixels.download( hostPixels.data(), hostPixels.size() );
    for( size_t i = 0; i < hostPixels.size(); ++i )

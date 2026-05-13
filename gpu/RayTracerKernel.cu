@@ -176,8 +176,25 @@ void launchKernel( const ReadOnlyGPUArrayView<SceneObject>& objects,
 {
    auto work = options.imageWidth * options.imageHeight;
    auto blocks = ( work + BLOCK_SIZE - 1 ) / BLOCK_SIZE;
+   cudaEvent_t start, stop;
 
-   rayTracerKernel<<<blocks,BLOCK_SIZE>>>( objects, lights, options, viewport, output );
+   HANDLE_ERROR( cudaEventCreate( &start ) );
+   HANDLE_ERROR( cudaEventCreate( &stop ) );
+
+   HANDLE_ERROR( cudaEventRecord( start ) );
+
+   rayTracerKernel<<<blocks, BLOCK_SIZE>>>( objects, lights, options, viewport, output );
+
+   HANDLE_ERROR( cudaEventRecord( stop ) );
+   HANDLE_ERROR( cudaEventSynchronize( stop ) );
+
+   float ms = 0.0f;
+   cudaEventElapsedTime( &ms, start, stop );
+
+   std::cout << "Kernel only time: " << ms << " ms\n";
+
+   HANDLE_ERROR( cudaEventDestroy( start ) );
+   HANDLE_ERROR( cudaEventDestroy( stop ) );
 
    cudaError_t err = cudaGetLastError();
    if( err != cudaSuccess )
