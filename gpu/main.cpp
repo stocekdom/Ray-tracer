@@ -1,4 +1,4 @@
-#include "GPURayTracer.h"
+#include "GPURayTracer.cuh"
 #include "lodepng.h"
 #include <memory>
 #include <chrono>

@@ -4,7 +4,7 @@
 #ifndef GPURAYTRACER_MATH_H
 #define GPURAYTRACER_MATH_H
 
-#include "CUDAAnnotations.h"
+#include "CUDAAnnotations.cuh"
 #include <algorithm>
 #include <cstdint>
 #include <cmath>

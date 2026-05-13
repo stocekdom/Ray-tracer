@@ -1,10 +1,13 @@
 //
 // Created by dominik on 20.02.26.
 //
-#include "GPURayTracer.h"
-#include "Math.cuh"
+#include "GPURayTracer.cuh"
 
-Pixels GPURayTracer::generateImage( const TracerOptions& options, const std::vector<std::shared_ptr<SceneObject>>& objects,
+#include "GPUArray.h"
+#include "Math.cuh"
+#include "RayTracerKernel.cuh"
+
+Pixels GPURayTracer::generateImage( const TracerOptions& options, const std::vector<SceneObject>& objects,
                                     const std::vector<Light>& lights )
 {
    float clampedFOV = std::clamp( options.fieldOfView, 0.0f, MAX_FOV );
@@ -15,22 +18,20 @@ Pixels GPURayTracer::generateImage( const TracerOptions& options, const std::vec
 
    Pixels pixels;
    pixels.reserve( options.imageWidth * options.imageHeight );
+   GPUArray<Color> gpuColors( options.imageWidth * options.imageHeight );
+   // Move (copy) data to the gpu memory
+   GPUArray<SceneObject> gpuObjects( objects.size() );
+   GPUArray<Light> gpuLights( lights.size() );
+   gpuObjects.upload( objects );
+   gpuLights.upload( lights );
 
-   // TODO do on GPU
-   /*
-   for( auto i = 0u; i < options.imageHeight; ++i )
-   {
-      for( auto j = 0u; j < options.imageWidth; ++j )
-      {
-         auto ray = generateRayForPixel( options, viewport, j, i );
-         pixels.emplace_back( getRayTracedColor( options, ray, objects, lights ) );
-      }
-   }
-   */
+   launchKernel( gpuObjects.readOnlyView(), gpuLights.readOnlyView(), options, gpuColors.view() );
+
+   gpuColors.download( pixels.data(), pixels.size() );
    return pixels;
 }
 
-RawPixels GPURayTracer::generateRawImage( const TracerOptions& options, const std::vector<std::shared_ptr<SceneObject>>& objects,
+RawPixels GPURayTracer::generateRawImage( const TracerOptions& options, const std::vector<SceneObject>& objects,
                                           const std::vector<Light>& lights )
 {
    float clampedFOV = std::clamp( options.fieldOfView, 0.0f, MAX_FOV );
@@ -40,21 +41,22 @@ RawPixels GPURayTracer::generateRawImage( const TracerOptions& options, const st
    } );
 
    RawPixels pixels( options.imageWidth * options.imageHeight * RGBABytes );
+   Pixels hostPixels;
+   hostPixels.reserve( options.imageWidth * options.imageHeight );
+   GPUArray<Color> gpuPixels( options.imageWidth * options.imageHeight );
 
-   // TODO do on GPU
-   /*
-   for( auto i = 0u; i < options.imageHeight; ++i )
-   {
-      for( auto j = 0u; j < options.imageWidth; ++j )
-      {
-         // Generate a ray for the current pixel and trace it
-         auto ray = generateRayForPixel( options, viewport, j, i );
+   // Move (copy) data to the gpu memory
+   GPUArray<SceneObject> gpuObjects( objects.size() );
+   GPUArray<Light> gpuLights( lights.size() );
+   gpuObjects.upload( objects );
+   gpuLights.upload( lights );
 
-         addColorToRawPixels( pixels, getRayTracedColor( options, ray, objects, lights ),
-                              ( i * options.imageWidth + j ) * RGBABytes );
-      }
-   }
-   */
+   launchKernel( gpuObjects.readOnlyView(), gpuLights.readOnlyView(), options, gpuPixels.view() );
+
+   gpuPixels.download( hostPixels.data(), hostPixels.size() );
+
+   for( size_t i = 0; i < hostPixels.size(); ++i )
+      addColorToRawPixels( pixels, hostPixels[ i ], i * RGBABytes );
 
    return pixels;
 }
@@ -81,7 +83,7 @@ void GPURayTracer::addColorToRawPixels( RawPixels& rawPixels, const Color& color
    rawPixels[ index ] = toneMapToUint8( color.R );
    rawPixels[ index + 1 ] = toneMapToUint8( color.G );
    rawPixels[ index + 2 ] = toneMapToUint8( color.B );
-   rawPixels[ index + 3 ] = color.alpha;
+   rawPixels[ index + 3 ] = 255;//color.alpha; currently we don't use alpha
 }
 
 uint8_t GPURayTracer::toneMapToUint8( float value )

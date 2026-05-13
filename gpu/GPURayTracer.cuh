@@ -17,7 +17,10 @@ using RawPixels = std::vector<unsigned char>;
 class GPURayTracer
 {
    public:
+      // TODO add tone mapping
       /**
+       * @deprecated Doesn't use tone mapping for now. Use generateRawImage instead
+       *
        * @brief Generates a ray-traced image from the objects, lights, and defined options
        *
        * @details Process of ray-tracing:
@@ -42,7 +45,7 @@ class GPURayTracer
        * @param lights A list of lights in a scene
        * @return A vector of individual pixel colors. The amount is equal to options.imageWidth * options.imageHeight
        */
-      static Pixels generateImage( const TracerOptions& options, const std::vector<std::shared_ptr<SceneObject>>& objects,
+      static Pixels generateImage( const TracerOptions& options, const std::vector<SceneObject>& objects,
                                    const std::vector<Light>& lights );
 
       /**
@@ -53,7 +56,7 @@ class GPURayTracer
        * @return A vector of individual pixel data. Each element represents one color channel, and the pixels are stored behind each other in memory as unsigned chars.
        * E.g. data: R,G,B,A,R,G,B,A The amount is equal to options.imageWidth * options.imageHeight
        */
-      static RawPixels generateRawImage( const TracerOptions& options, const std::vector<std::shared_ptr<SceneObject>>& objects,
+      static RawPixels generateRawImage( const TracerOptions& options, const std::vector<SceneObject>& objects,
                                          const std::vector<Light>& lights );
 
    private:

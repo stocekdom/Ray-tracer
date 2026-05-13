@@ -7,7 +7,7 @@
 
 #include <stdexcept>
 
-#include "CUDAAnnotations.h"
+#include "CUDAAnnotations.cuh"
 #include <vector>
 
 template<typename T>
@@ -16,19 +16,23 @@ struct ReadOnlyGPUArrayView
    public:
       GPU_HD ReadOnlyGPUArrayView() = delete;
 
-      GPU_HD ReadOnlyGPUArrayView( T* data, unsigned int size );
+      GPU_HD ReadOnlyGPUArrayView( T* data, size_t size );
 
-      GPU_HD [[nodiscard]] unsigned int size() const;
+      GPU_HD [[nodiscard]] size_t size() const;
 
-      GPU_HD const T& operator[]( unsigned int index ) const;
+      GPU_HD const T& operator[]( size_t index ) const;
 
-      HOST_DEV const T& at( unsigned int index ) const;
+      HOST_DEV const T& at( size_t index ) const;
 
-      GPU_HD [[nodiscard]] bool inBounds( unsigned int index ) const;
+      GPU_HD [[nodiscard]] bool inBounds( size_t index ) const;
+
+      GPU_HD const T* begin() const;
+
+      GPU_HD const T* end() const;
 
    protected:
       T* data = nullptr;
-      unsigned int _size = 0;
+      size_t _size = 0;
 };
 
 template<typename T>
@@ -36,11 +40,15 @@ struct GPUArrayView : ReadOnlyGPUArrayView<T>
 {
    GPU_HD GPUArrayView() = delete;
 
-   GPU_HD GPUArrayView( T* data, unsigned int size );
+   GPU_HD GPUArrayView( T* data, size_t size );
 
-   GPU_HD T& operator[]( unsigned int index );
+   GPU_HD T& operator[]( size_t index );
 
-   HOST_DEV T& at( unsigned int index );
+   HOST_DEV T& at( size_t index );
+
+   GPU_HD T* begin();
+
+   GPU_HD T* end();
 };
 
 template<typename T>
@@ -49,23 +57,23 @@ struct GPUArray
    public:
       GPUArray() = delete;
 
+      explicit GPUArray( size_t size );
+
       GPUArray( const GPUArray& ) = delete;
 
       GPUArray& operator=( const GPUArray& ) = delete;
-
-      explicit GPUArray( unsigned int size );
 
       GPUArray( GPUArray&& other ) noexcept;
 
       ~GPUArray();
 
-      void upload( const T* hostData, unsigned int size );
+      void upload( const T* hostData, size_t size );
 
       void upload( const std::vector<T>& hostData );
 
-      void download( T* hostData, unsigned int size ) const;
+      void download( T* hostData, size_t size ) const;
 
-      [[nodiscard]] unsigned int size() const;
+      [[nodiscard]] size_t size() const;
 
       GPUArrayView<T> view() const;
 
@@ -73,32 +81,32 @@ struct GPUArray
 
    private:
       T* data = nullptr;
-      unsigned int _size = 0;
+      size_t _size = 0;
 
-      void allocate( unsigned int size );
+      void allocate( size_t size );
 
       void free() const;
 };
 
 template<typename T>
-ReadOnlyGPUArrayView<T>::ReadOnlyGPUArrayView( T* data, unsigned int size ) : data( data ), _size( size )
+ReadOnlyGPUArrayView<T>::ReadOnlyGPUArrayView( T* data, size_t size ) : data( data ), _size( size )
 {
 }
 
 template<typename T>
-unsigned int ReadOnlyGPUArrayView<T>::size() const
+size_t ReadOnlyGPUArrayView<T>::size() const
 {
    return _size;
 }
 
 template<typename T>
-const T& ReadOnlyGPUArrayView<T>::operator[]( unsigned int index ) const
+const T& ReadOnlyGPUArrayView<T>::operator[]( size_t index ) const
 {
    return data[ index ];
 }
 
 template<typename T>
-const T& ReadOnlyGPUArrayView<T>::at( unsigned int index ) const
+const T& ReadOnlyGPUArrayView<T>::at( size_t index ) const
 {
    if( !inBounds( index ) )
       throw std::out_of_range( "GPUArrayView::at: index out of bounds" );
@@ -107,24 +115,36 @@ const T& ReadOnlyGPUArrayView<T>::at( unsigned int index ) const
 }
 
 template<typename T>
-bool ReadOnlyGPUArrayView<T>::inBounds( unsigned int index ) const
+bool ReadOnlyGPUArrayView<T>::inBounds( size_t index ) const
 {
    return index < _size;
 }
 
 template<typename T>
-GPUArrayView<T>::GPUArrayView( T* data, unsigned int size ) : ReadOnlyGPUArrayView<T>( data, size )
+const T* ReadOnlyGPUArrayView<T>::begin() const
+{
+   return data;
+}
+
+template<typename T>
+const T* ReadOnlyGPUArrayView<T>::end() const
+{
+   return data + _size;
+}
+
+template<typename T>
+GPUArrayView<T>::GPUArrayView( T* data, size_t size ) : ReadOnlyGPUArrayView<T>( data, size )
 {
 }
 
 template<typename T>
-T& GPUArrayView<T>::operator[]( unsigned int index )
+T& GPUArrayView<T>::operator[]( size_t index )
 {
    return this->data[ index ];
 }
 
 template<typename T>
-T& GPUArrayView<T>::at( unsigned int index )
+T& GPUArrayView<T>::at( size_t index )
 {
    if( !this->inBounds( index ) )
       throw std::out_of_range( "GPUArrayView::at: index out of bounds" );
@@ -133,7 +153,19 @@ T& GPUArrayView<T>::at( unsigned int index )
 }
 
 template<typename T>
-GPUArray<T>::GPUArray( unsigned int size )
+T* GPUArrayView<T>::begin()
+{
+   return this->data;
+}
+
+template<typename T>
+T* GPUArrayView<T>::end()
+{
+   return this->data + this->_size;
+}
+
+template<typename T>
+GPUArray<T>::GPUArray( size_t size )
 {
    allocate( size );
    _size = size;
@@ -149,13 +181,13 @@ GPUArray<T>::GPUArray( GPUArray&& other ) noexcept : data( other.data ), _size( 
 template<typename T>
 GPUArray<T>::~GPUArray()
 {
-   free( data );
+   free();
 }
 
 // Optionally add return value checks
 
 template<typename T>
-void GPUArray<T>::upload( const T* hostData, unsigned int size )
+void GPUArray<T>::upload( const T* hostData, size_t size )
 {
    if( size > _size )
       throw std::runtime_error( "GPUArray upload: upload size exceeds allocated size of the array" );
@@ -170,7 +202,7 @@ void GPUArray<T>::upload( const std::vector<T>& hostData )
 }
 
 template<typename T>
-void GPUArray<T>::download( T* hostData, unsigned int size ) const
+void GPUArray<T>::download( T* hostData, size_t size ) const
 {
    if( size > _size )
       throw std::runtime_error( "GPUArray download: download size exceeds allocated size of the array" );
@@ -179,7 +211,7 @@ void GPUArray<T>::download( T* hostData, unsigned int size ) const
 }
 
 template<typename T>
-unsigned int GPUArray<T>::size() const
+size_t GPUArray<T>::size() const
 {
    return _size;
 }
@@ -197,9 +229,9 @@ ReadOnlyGPUArrayView<T> GPUArray<T>::readOnlyView() const
 }
 
 template<typename T>
-void GPUArray<T>::allocate( unsigned int size )
+void GPUArray<T>::allocate( size_t size )
 {
-   cudaMalloc( static_cast<void**>( &data ), size * sizeof( T ) );
+   cudaMalloc( reinterpret_cast<void**>( &data ), size * sizeof( T ) );
 }
 
 template<typename T>

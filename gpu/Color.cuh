@@ -5,7 +5,7 @@
 #ifndef GPURAYTRACER_COLOR_H
 #define GPURAYTRACER_COLOR_H
 
-#include "CUDAAnnotations.h"
+#include "CUDAAnnotations.cuh"
 
 /**
  * @brief Representation of a color using floats for color channels.

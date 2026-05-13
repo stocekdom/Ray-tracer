@@ -3,7 +3,7 @@
 //
 
 #include "RayTracerKernel.cuh"
-#include "CUDAAnnotations.h"
+#include "CUDAAnnotations.cuh"
 #include "RayTraceResult.h"
 #include "Viewport.h"
 

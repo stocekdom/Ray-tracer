@@ -5,7 +5,7 @@
 #ifndef GPURAYTRACER_RAYTRACERKERNEL_CUH
 #define GPURAYTRACER_RAYTRACERKERNEL_CUH
 
-#include "GPUArray.h"
+#include "GPUArray.cuh"
 #include "Objects.cuh"
 #include "TracerOptions.h"
 
