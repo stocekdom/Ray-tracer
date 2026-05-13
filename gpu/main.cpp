@@ -4,6 +4,11 @@
 #include <chrono>
 #include <iostream>
 
+float4 makeFloat4( float x, float y, float z )
+{
+   return float4{ x, y, z, 0.f };
+}
+
 int main()
 {
    static constexpr int RGBABytes = 4;
@@ -18,17 +23,23 @@ int main()
 
    GPURayTracer rayTracer;
 
-   std::vector<std::shared_ptr<SceneObject>> objects;
+   std::vector<SceneObject> objects;
    std::vector<Light> lights;
 
    Material floor( Color( 0.95f, 0.05f, 0.05f ), 0.1f, 0.9f, 16.f );
    Material orangeMaterial( Color( 1.f, 0.5f, 0.05f ), 0.45f, 0.3f, 64.f );
    Material greenMaterial( Color( 0.05f, 1.f, 0.01f ), 0.45f, 0.3f, 64.f );
-   objects.emplace_back( std::make_shared<Sphere>( Vector3f{ -10.f, -10.f, 100.f }, orangeMaterial, 22.f ) );
-   objects.emplace_back( std::make_shared<Sphere>( Vector3f{ -70.f, -20.f, 140.f }, greenMaterial, 12.f ) );
-   objects.emplace_back( std::make_shared<Plane>( Vector3f( 0.f, -50.f, 100.f ), floor, Vector3f( 0.f, 1.f, 0.f ), 100.f, 100.f ) );
-   objects.emplace_back( std::make_shared<Plane>( Vector3f( -120.f, 10.f, 100.f ), floor, Vector3f( 1.f, 0.f, 0.f ), 100.f, 100.f ) );
-   lights.emplace_back( Vector3f( 30.f, 20.f, 10.f ), Color( 0.98f, 0.95f, 0.90f ), 4.f );
+   objects.emplace_back( SceneObject::makeSphere( makeFloat4( -10.f, -10.f, 100.f ), orangeMaterial, 22.f ) );
+   objects.emplace_back(
+      SceneObject::makeBlock( makeFloat4( 50.f, -30.f, 110.f ), greenMaterial, makeFloat4( 12.f, 10.f, 15.f ) ) );
+
+   objects.emplace_back(
+      SceneObject::makePlane( makeFloat4( 0.f, -50.f, 100.f ), floor, makeFloat4( 0.f, 1.f, 0.f ), 100.f, 100.f ) );
+
+   objects.emplace_back(
+      SceneObject::makePlane( makeFloat4( -120.f, 10.f, 100.f ), floor, makeFloat4( 1.f, 0.f, 0.f ), 100.f, 100.f ) );
+
+   lights.emplace_back( makeFloat4( 30.f, 20.f, 10.f ), Color( 0.98f, 0.95f, 0.90f ), 4.f );
 
    auto start = std::chrono::high_resolution_clock::now();
 

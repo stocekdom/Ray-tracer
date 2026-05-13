@@ -4,29 +4,34 @@
 
 #include "Objects.cuh"
 #include "Math.cuh"
-#include <stdexcept>
 
-Light::Light( const Vector3f& center, const Color& color, float intensity )
+Ray::Ray( const float4& start, const float4& direction )
+   : startPoint( start ), direction( direction ),
+     inverseDirection( float4{ 1 / direction.x, 1 / direction.y, 1 / direction.z, 0.f } )
+{
+}
+
+Light::Light( const float4& center, const Color& color, float intensity )
 {
    this->centerPosition = center;
    this->lightColor = color;
-   this->intensity = std::pow( 10.f, intensity );
+   this->intensity = powf( 10.f, intensity );
 }
 
-bool SceneObject::intersects( const Ray& ray, RayHitResult& result ) const
+GPU_DEV bool SceneObject::intersects( const Ray& ray, RayHitResult& result ) const
 {
    switch( type )
    {
-      case ObjectType::SPHERE: return intersectSphere( ray, result );
-      case ObjectType::PLANE: return intersectPlane( ray, result );
-      case ObjectType::BLOCK: return intersectBlock( ray, result );
+      case SPHERE: return intersectSphere( ray, result );
+      case PLANE: return intersectPlane( ray, result );
+      case BLOCK: return intersectBlock( ray, result );
       default:
-         throw std::runtime_error( "Invalid object type in intersects method call" );
+         return false;
    }
 }
 
 // Math behind ray-sphere intersection: https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection.html
-bool SceneObject::intersectSphere( const Ray& ray, RayHitResult& result ) const
+GPU_DEV bool SceneObject::intersectSphere( const Ray& ray, RayHitResult& result ) const
 {
    const auto offsetCenter = ray.startPoint - centerPosition;
    // Optional check. However, branching costs something so we ignore it and only construct normalized rays in the Ray-Tracer class
@@ -37,12 +42,12 @@ bool SceneObject::intersectSphere( const Ray& ray, RayHitResult& result ) const
 
    // We can ignore 'a' since it is equal to Direction^2, which is a dot product of Direction vector.
    // However, the direction vector is normalized, so the result is 1, and it won't play a part in the quadratic formula solutions
-   const float b = dotProduct( ray.direction, offsetCenter );
-   const float c = dotProduct( offsetCenter, offsetCenter ) - ( data.sphere.radius * data.sphere.radius );
+   const float b = dotProduct3( ray.direction, offsetCenter );
+   const float c = dotProduct3( offsetCenter, offsetCenter ) - ( data.sphere.radius * data.sphere.radius );
    float discriminant = ( b * b ) - c;
 
    // No real solution
-   if( discriminant < Math::EPSILON )
+   if( discriminant < FLT_EPSILON )
       return false;
 
    discriminant = sqrtf( discriminant );
@@ -59,20 +64,20 @@ bool SceneObject::intersectSphere( const Ray& ray, RayHitResult& result ) const
    // This math is moved into a ray tracer to optimize instruction count. Normals can be moved to if we switch to enum objects
    result.hitPoint = ray.startPoint + ( result.distance * ray.direction );
    result.normal = result.hitPoint - centerPosition;
-   result.normal.normalize();
+   normalize3( result.normal );
    return true;
 }
 
 // Math behind plane intersection: https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-plane-and-ray-disk-intersection.html
-bool SceneObject::intersectPlane( const Ray& ray, RayHitResult& result ) const
+GPU_DEV bool SceneObject::intersectPlane( const Ray& ray, RayHitResult& result ) const
 {
-   auto denominator = dotProduct( data.plane.normal, ray.direction );
+   auto denominator = dotProduct3( data.plane.normal, ray.direction );
 
    // Check if we don't divide by 0. If the denominator is 0 the plane and the ray are parallel and never intersect
-   if( fabsf( denominator ) < Math::EPSILON )
+   if( fabsf( denominator ) < FLT_EPSILON )
       return false;
 
-   float distance = dotProduct( centerPosition - ray.startPoint, data.plane.normal ) / denominator;
+   float distance = dotProduct3( centerPosition - ray.startPoint, data.plane.normal ) / denominator;
 
    if( distance < DISTANCE_EPSILON )
       return false;
@@ -85,30 +90,42 @@ bool SceneObject::intersectPlane( const Ray& ray, RayHitResult& result ) const
    return true;
 }
 
-bool SceneObject::intersectBlock( const Ray& ray, RayHitResult& result ) const
+GPU_DEV bool SceneObject::intersectBlock( const Ray& ray, RayHitResult& result ) const
 {
-   Vector3f t1 = VectorOps::hadamardProduct( minPoint - ray.startPoint, ray.inverseDirection );
-   Vector3f t2 = VectorOps::hadamardProduct( maxPoint - ray.startPoint, ray.inverseDirection );
+   // Slab method
+   float4 t1 = hadamardProduct3( data.block.minPoint - ray.startPoint, ray.inverseDirection );
+   float4 t2 = hadamardProduct3( data.block.maxPoint - ray.startPoint, ray.inverseDirection );
 
-   Vector3f tSmaller = VectorOps::min( t1, t2 );
-   Vector3f tBigger = VectorOps::max( t1, t2 );
+   float4 tSmaller = minf4( t1, t2 );
+   float4 tBigger = maxf4( t1, t2 );
 
-   float tMin = std::max( std::max( tSmaller.x(), tSmaller.y() ), tSmaller.z() );
-   float tMax = std::min( std::min( tBigger.x(), tBigger.y() ), tBigger.z() );
+   float tMin = fmaxf( fmaxf( tSmaller.x, tSmaller.y ), tSmaller.z );
+   float tMax = fminf( fminf( tBigger.x, tBigger.y ), tBigger.z );
 
-   if( tMax < std::max( tMin, 0.f ) )
+   if( tMax < fmaxf( tMin, 0.f ) )
       return false;
 
+   // Check if the ray starts inside the block. If it does hit point is the tMax * ray.direction instead of tMin
    bool isInside = tMin < 0.f;
    result.distance = isInside ? tMax : tMin;
    result.hitPoint = ray.startPoint + ( result.distance * ray.direction );
 
+   // Calculate which block side got hit to get the normal. Warp divergence is minimal since there's a very low change a ray will be inside the block
    int axis = 0;
-   axis = (tSmaller.y() > tSmaller.x()) ? 1 : axis;
-   axis = (tSmaller.z() > tSmaller[axis]) ? 2 : axis;
 
-   result.normal = Vector3f( 0.f, 0.f, 0.f );
-   result.normal[ axis ] = std::copysign( 1.0f, -ray.direction[ axis ] );
+   if( !isInside )
+   {
+      axis = ( tSmaller.y > tSmaller.x ) ? 1 : 0;
+      axis = ( tSmaller.z > get( tSmaller, axis ) ) ? 2 : axis;
+   }
+   else
+   {
+      axis = ( tBigger.y < tBigger.x ) ? 1 : 0;
+      axis = ( tBigger.z < get( tBigger, axis ) ) ? 2 : axis;
+   }
+
+   result.normal = float4{ 0.f, 0.f, 0.f, 0.f };
+   set( result.normal, axis, copysignf( 1.0f, get( -ray.direction, axis ) ) );
 
    if( isInside )
       result.normal = -result.normal;

@@ -5,31 +5,38 @@
 #ifndef GPURAYTRACER_OBJECTS_H
 #define GPURAYTRACER_OBJECTS_H
 
+#include <cstdint>
 #include "Color.cuh"
 #include "Material.h"
 #include "RayTraceResult.h"
 #include "Vector.cuh"
 
-// Using single precision (float). If needed, switch to Vector3d for double precision
+// Using single precision (float). If needed, switch to double for double precision
 
 struct Ray
 {
-   Vector3f startPoint;
+   GPU_HD Ray( const float4& start, const float4& direction );
+
+   float4 startPoint;
    // This should be normalized
-   Vector3f direction;
+   float4 direction;
+   // Inverse of the direction for faster block intersection calculation
+   // WARN has to change if direction changes. Currently is public for easier access
+   // TODO setters
+   float4 inverseDirection;
 };
 
 class Light
 {
    public:
-      Light( const Vector3f& center, const Color& color, float intensity );
+      Light( const float4& center, const Color& color, float intensity );
 
-      Vector3f centerPosition;
+      float4 centerPosition{};
       Color lightColor;
       float intensity;
 };
 
-enum class ObjectType : uint8_t
+enum ObjectType : uint8_t
 {
    SPHERE,
    PLANE,
@@ -43,19 +50,19 @@ struct SphereData
 
 struct PlaneData
 {
-   Vector3f normal;
+   float4 normal;
    float halfWidth, halfDepth;
 };
 
 struct BlockData
 {
-   Vector3f minPoint;
-   Vector3f maxPoint;
+   float4 minPoint;
+   float4 maxPoint;
 };
 
 struct SceneObject
 {
-   Vector3f centerPosition;
+   float4 centerPosition;
    Material material;
    ObjectType type;
 
@@ -68,26 +75,26 @@ struct SceneObject
 
    static constexpr float DISTANCE_EPSILON = 0.0001f;
 
-   HOST_DEV static SceneObject makeSphere( const Vector3f& center, const Material& material, float radius )
+   HOST_DEV static SceneObject makeSphere( const float4& center, const Material& material, float radius )
    {
       ObjectData data{};
       data.sphere = SphereData{ radius };
-      return SceneObject{ center, material, ObjectType::PLANE, data };
+      return SceneObject{ center, material, SPHERE, data };
    }
 
-   static SceneObject makePlane( const Vector3f& center, const Material& material,
-                                 const Vector3f& normal, float halfWidth, float halfDepth )
+   HOST_DEV static SceneObject makePlane( const float4& center, const Material& material,
+                                          const float4& normal, float halfWidth, float halfDepth )
    {
       ObjectData data{};
       data.plane = PlaneData{ normal, halfWidth, halfDepth };
-      return SceneObject{ center, material, ObjectType::PLANE, data };
+      return SceneObject{ center, material, PLANE, data };
    }
 
-   static SceneObject makeBlock( const Vector3f& center, const Material& material, const Vector3f& extents )
+   HOST_DEV static SceneObject makeBlock( const float4& center, const Material& material, const float4& extents )
    {
       ObjectData data{};
       data.block = BlockData{ center - extents, center + extents };
-      return SceneObject{ center, material, ObjectType::PLANE, data };
+      return SceneObject{ center, material, BLOCK, data };
    }
 
    /**

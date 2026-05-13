@@ -56,7 +56,7 @@ namespace Math
    {
 #ifdef __CUDA_ARCH__
       // Lerp formula using fused multiply add for fewer instructions
-      return fma( factor, b, fma( -factor, a, a ) )
+      return fma( factor, b, fma( -factor, a, a ) );
 #else
       return a + factor * ( b - a );
 #endif

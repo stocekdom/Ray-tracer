@@ -3,7 +3,9 @@
 //
 #include "GPURayTracer.cuh"
 
-#include "GPUArray.h"
+#include <chrono>
+#include <iostream>
+#include "GPUArray.cuh"
 #include "Math.cuh"
 #include "RayTracerKernel.cuh"
 
@@ -17,7 +19,7 @@ Pixels GPURayTracer::generateImage( const TracerOptions& options, const std::vec
    } );
 
    Pixels pixels;
-   pixels.reserve( options.imageWidth * options.imageHeight );
+   pixels.resize( options.imageWidth * options.imageHeight );
    GPUArray<Color> gpuColors( options.imageWidth * options.imageHeight );
    // Move (copy) data to the gpu memory
    GPUArray<SceneObject> gpuObjects( objects.size() );
@@ -25,7 +27,7 @@ Pixels GPURayTracer::generateImage( const TracerOptions& options, const std::vec
    gpuObjects.upload( objects );
    gpuLights.upload( lights );
 
-   launchKernel( gpuObjects.readOnlyView(), gpuLights.readOnlyView(), options, gpuColors.view() );
+   launchKernel( gpuObjects.readOnlyView(), gpuLights.readOnlyView(), options, viewport, gpuColors.view() );
 
    gpuColors.download( pixels.data(), pixels.size() );
    return pixels;
@@ -42,7 +44,7 @@ RawPixels GPURayTracer::generateRawImage( const TracerOptions& options, const st
 
    RawPixels pixels( options.imageWidth * options.imageHeight * RGBABytes );
    Pixels hostPixels;
-   hostPixels.reserve( options.imageWidth * options.imageHeight );
+   hostPixels.resize( options.imageWidth * options.imageHeight );
    GPUArray<Color> gpuPixels( options.imageWidth * options.imageHeight );
 
    // Move (copy) data to the gpu memory
@@ -51,10 +53,14 @@ RawPixels GPURayTracer::generateRawImage( const TracerOptions& options, const st
    gpuObjects.upload( objects );
    gpuLights.upload( lights );
 
-   launchKernel( gpuObjects.readOnlyView(), gpuLights.readOnlyView(), options, gpuPixels.view() );
+   auto start = std::chrono::high_resolution_clock::now();
+   launchKernel( gpuObjects.readOnlyView(), gpuLights.readOnlyView(), options, viewport, gpuPixels.view() );
+
+   auto end = std::chrono::high_resolution_clock::now();
+   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( end - start );
+   std::cout << "Kernel only time: " << duration.count() << " ms" << std::endl;
 
    gpuPixels.download( hostPixels.data(), hostPixels.size() );
-
    for( size_t i = 0; i < hostPixels.size(); ++i )
       addColorToRawPixels( pixels, hostPixels[ i ], i * RGBABytes );
 
@@ -79,7 +85,6 @@ Viewport GPURayTracer::calculateViewport( const TracerOptions& options )
 
 void GPURayTracer::addColorToRawPixels( RawPixels& rawPixels, const Color& color, size_t index )
 {
-   // TODO tone map
    rawPixels[ index ] = toneMapToUint8( color.R );
    rawPixels[ index + 1 ] = toneMapToUint8( color.G );
    rawPixels[ index + 2 ] = toneMapToUint8( color.B );

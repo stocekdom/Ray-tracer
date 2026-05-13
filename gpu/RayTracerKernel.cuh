@@ -8,10 +8,12 @@
 #include "GPUArray.cuh"
 #include "Objects.cuh"
 #include "TracerOptions.h"
+#include "Viewport.h"
 
 void launchKernel( const ReadOnlyGPUArrayView<SceneObject>& objects,
                    const ReadOnlyGPUArrayView<Light>& lights,
                    const TracerOptions& options,
-                   GPUArrayView<Color>& output );
+                   const Viewport& viewport,
+                   GPUArrayView<Color> output );
 
 #endif //GPURAYTRACER_RAYTRACERKERNEL_CUH

@@ -4,336 +4,135 @@
 
 #ifndef GPURAYTRACER_VECTOR_H
 #define GPURAYTRACER_VECTOR_H
-#include <algorithm>
-#include <complex>
+#include "CUDAAnnotations.cuh"
+#include <cmath>
+#include <cfloat>
 #include <ostream>
 
-// TODO use native cuda float4
-template<typename T, size_t N>
-class Vector
+GPU_HD inline float get( float4 data, size_t index )
 {
-   public:
-      GPU_HD Vector()
-      {
-         std::fill( members, members + N, T{} );
-      }
-
-      template<typename... Args>
-      GPU_HD Vector( Args... args ) : members{ static_cast<T>( args )... }
-      {
-         static_assert( sizeof...( Args ) == N, "Invalid number of arguments for Vector constructor" );
-      }
-
-      GPU_HD Vector( const Vector<T, N>& other ) = default;
-
-      GPU_HD Vector( Vector<T, N>&& other ) noexcept = default;
-
-      GPU_HD ~Vector() = default;
-
-      GPU_HD Vector& operator=( const Vector& ) = default;
-
-      GPU_HD Vector& operator=( Vector&& ) noexcept( std::is_nothrow_move_assignable_v<T> ) = default;
-
-      template<typename U>
-      GPU_HD explicit Vector( const Vector<U, N>& other )
-      {
-         for( size_t i = 0; i < N; ++i )
-         {
-            members[ i ] = static_cast<T>( other[ i ] );
-         }
-      }
-
-      GPU_HD T& operator[]( size_t index )
-      {
-         return members[ index ];
-      }
-
-      GPU_HD const T& operator[]( size_t index ) const
-      {
-         return members[ index ];
-      }
-
-      // Other methods
-      GPU_HD T getEuclideanDistance( const Vector<T, N>& other ) const
-      {
-         T sum = 0;
-         for( size_t i = 0; i < N; ++i )
-         {
-            T diff = members[ i ] - other.members[ i ];
-            sum += diff * diff;
-         }
-         return std::sqrt( sum );
-      }
-
-      GPU_HD void normalize() requires std::floating_point<T>
-      {
-         T lengthSq = 0;
-         for( size_t i = 0; i < N; ++i )
-         {
-            lengthSq += members[ i ] * members[ i ];
-         }
-         T length = std::sqrt( lengthSq );
-
-         if( length <= std::numeric_limits<T>::epsilon() )
-         {
-            std::fill( members, members + N, T{ 0 } );
-            return;
-         }
-
-         for( size_t i = 0; i < N; ++i )
-         {
-            members[ i ] /= length;
-         }
-      }
-
-   protected:
-      T members[ N ];
-};
-
-template<typename T>
-struct Vector3 : Vector<T, 3>
-{
-   using Vector<T, 3>::Vector;
-
-   GPU_HD Vector3() : Vector<T, 3>()
-   {
-   }
-
-   GPU_HD Vector3( T x, T y, T z ) : Vector<T, 3>( x, y, z )
-   {
-   }
-
-   template<typename U>
-   GPU_HD Vector3( const Vector<U, 3>& other ) : Vector<T, 3>( other )
-   {
-   }
-
-   GPU_HD T& x() { return this->members[ 0 ]; }
-   GPU_HD T& y() { return this->members[ 1 ]; }
-   GPU_HD T& z() { return this->members[ 2 ]; }
-
-   GPU_HD const T& x() const { return this->members[ 0 ]; }
-   GPU_HD const T& y() const { return this->members[ 1 ]; }
-   GPU_HD const T& z() const { return this->members[ 2 ]; }
-};
-
-template<typename T>
-struct Vector4 : Vector<T, 4>
-{
-   using Vector<T, 4>::Vector;
-
-   GPU_HD Vector4() : Vector<T, 4>()
-   {
-   }
-
-   GPU_HD Vector4( T x_val, T y_val, T z_val, T w_val ) : Vector<T, 4>( x_val, y_val, z_val, w_val )
-   {
-   }
-
-   GPU_HD Vector4( const Vector<T, 4>& other ) : Vector<T, 4>( other )
-   {
-   }
-
-   GPU_HD T& x() { return this->members[ 0 ]; }
-   GPU_HD T& y() { return this->members[ 1 ]; }
-   GPU_HD T& z() { return this->members[ 2 ]; }
-   GPU_HD T& w() { return this->members[ 3 ]; }
-
-   GPU_HD const T& x() const { return this->members[ 0 ]; }
-   GPU_HD const T& y() const { return this->members[ 1 ]; }
-   GPU_HD const T& z() const { return this->members[ 2 ]; }
-   GPU_HD const T& w() const { return this->members[ 3 ]; }
-};
-
-namespace VectorOps
-{
-   template<typename T, size_t N>
-   GPU_HD T dotProduct( const Vector<T, N>& lhs, const Vector<T, N>& rhs )
-   {
-      T result = 0;
-      for( size_t i = 0; i < N; ++i )
-      {
-         result += lhs[ i ] * rhs[ i ];
-      }
-      return result;
-   }
-
-   template<typename T, size_t N>
-   GPU_HD Vector<T, N> hadamardProduct( const Vector<T, N>& lhs, const Vector<T, N>& rhs )
-   {
-      Vector<T, N> result;
-      for( size_t i = 0; i < N; ++i )
-      {
-         result[ i ] = lhs[ i ] * rhs[ i ];
-      }
-      return result;
-   }
-
-   // Constructs a new vector with pairwise minimums from lhs and rhs
-   template<typename T, size_t N>
-   GPU_HD Vector<T, N> min( const Vector<T, N>& lhs, const Vector<T, N>& rhs )
-   {
-      Vector<T, N> result;
-      for( size_t i = 0; i < N; ++i )
-      {
-         result[ i ] = std::min( lhs[ i ], rhs[ i ] );
-      }
-      return result;
-   }
-
-   // Constructs a new vector with pairwise maximums from lhs and rhs
-   template<typename T, size_t N>
-   GPU_HD Vector<T, N> max( const Vector<T, N>& lhs, const Vector<T, N>& rhs )
-   {
-      Vector<T, N> result;
-      for( size_t i = 0; i < N; ++i )
-      {
-         result[ i ] = std::max( lhs[ i ], rhs[ i ] );
-      }
-      return result;
-   }
+   // Float4 is packed and we can index individual elements
+   return reinterpret_cast<float*>( &data )[ index ];
 }
 
-template<typename T, size_t N>
-HOST_DEV std::ostream& operator<<( std::ostream& os, const Vector<T, N>& v )
+GPU_HD inline void set( float4& data, size_t index, float value )
+{
+   reinterpret_cast<float*>( &data )[ index ] = value;
+}
+
+GPU_HD inline float safeGet( float4 data, size_t index )
+{
+   // TODO indicate error
+   if( index >= 4 )
+      return -1;
+
+   return get( data, index );
+}
+
+/**
+ * Calculates the euclidian distance of two float4 vectors in 3D
+ * Only uses the x,y,z elements to calculate the distance
+ * @param lhs
+ * @param rhs
+ * @return The euclidian distance of two vectors
+ */
+GPU_HD inline float euclideanDistance3( const float4& lhs, const float4& rhs )
+{
+   return sqrtf(
+      ( lhs.x - rhs.x ) * ( lhs.x - rhs.x )
+      + ( lhs.y - rhs.y ) * ( lhs.y - rhs.y )
+      + ( lhs.z - rhs.z ) * ( lhs.z - rhs.z ) );
+}
+
+GPU_HD inline float euclideanDistance( const float4& lhs, const float4& rhs )
+{
+   return sqrtf(
+      ( lhs.x - rhs.x ) * ( lhs.x - rhs.x )
+      + ( lhs.y - rhs.y ) * ( lhs.y - rhs.y )
+      + ( lhs.z - rhs.z ) * ( lhs.z - rhs.z )
+      + ( lhs.w - rhs.w ) * ( lhs.w - rhs.w ) );
+}
+
+GPU_HD inline void normalize3( float4& data )
+{
+   float length = data.x * data.x + data.y * data.y + data.z * data.z;
+   length = sqrtf( length );
+
+   if( length <= FLT_EPSILON )
+   {
+      data = float4{ 0, 0, 0, 0 };
+      return;
+   }
+
+   data = float4{ data.x / length, data.y / length, data.z / length, 0 };
+}
+
+GPU_HD inline float4 minf4( const float4& lhs, const float4& rhs )
+{
+   return float4{ fminf( lhs.x, rhs.x ), fminf( lhs.y, rhs.y ), fminf( lhs.z, rhs.z ), fminf( lhs.w, rhs.w ) };
+}
+
+GPU_HD inline float4 maxf4( const float4& lhs, const float4& rhs )
+{
+   return float4{ fmaxf( lhs.x, rhs.x ), fmaxf( lhs.y, rhs.y ), fmaxf( lhs.z, rhs.z ), fmaxf( lhs.w, rhs.w ) };
+}
+
+GPU_HD inline float dotProduct3( const float4& lhs, const float4& rhs )
+{
+   return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z;
+}
+
+GPU_HD inline float4 hadamardProduct3( const float4& lhs, const float4& rhs )
+{
+   return float4{ lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z, 0.f };
+}
+
+HOST_DEV inline std::ostream& operator<<( std::ostream& os, const float4& rhs )
 {
    os << "(";
-   for( size_t i = 0; i < N; ++i )
-   {
-      os << v[ i ] << ( i == N - 1 ? "" : ", " );
-   }
+   os << rhs.x << ", " << rhs.y << ", " << rhs.z << ", " << rhs.w;
    os << ")";
    return os;
 }
 
-template<typename T, size_t N>
-GPU_HD Vector<T, N> operator+( const Vector<T, N>& lhs, const Vector<T, N>& rhs )
+GPU_HD inline float4 operator+( const float4& lhs, const float4& rhs )
 {
-   Vector<T, N> result;
-   for( size_t i = 0; i < N; ++i )
-   {
-      result[ i ] = lhs[ i ] + rhs[ i ];
-   }
-   return result;
+   return float4{ lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z, lhs.w + rhs.w };
 }
 
-template<typename T, size_t N>
-GPU_HD Vector<T, N>& operator+=( Vector<T, N>& lhs, const Vector<T, N>& rhs )
+GPU_HD inline float4 operator-( const float4& rhs )
 {
-   for( size_t i = 0; i < N; ++i )
-   {
-      lhs[ i ] += rhs[ i ];
-   }
-   return lhs;
+   return float4{ -rhs.x, -rhs.y, -rhs.z, -rhs.w };
 }
 
-template<typename T, size_t N>
-GPU_HD Vector<T, N> operator-( const Vector<T, N>& v )
+GPU_HD inline float4 operator-( const float4& lhs, const float4& rhs )
 {
-   Vector<T, N> result;
-   for( size_t i = 0; i < N; ++i )
-   {
-      result[ i ] = -v[ i ];
-   }
-   return result;
+   return float4{ lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z, lhs.w - rhs.w };
 }
 
-template<typename T, size_t N>
-GPU_HD Vector<T, N> operator-( const Vector<T, N>& lhs, const Vector<T, N>& rhs )
+GPU_HD inline float4 operator*( const float4& lhs, float rhs )
 {
-   Vector<T, N> result;
-   for( size_t i = 0; i < N; ++i )
-   {
-      result[ i ] = lhs[ i ] - rhs[ i ];
-   }
-   return result;
+   return float4{ lhs.x * rhs, lhs.y * rhs, lhs.z * rhs, lhs.w * rhs };
 }
 
-template<typename T, size_t N>
-GPU_HD Vector<T, N>& operator-=( Vector<T, N>& lhs, const Vector<T, N>& rhs )
+GPU_HD inline float4 operator*( float lhs, const float4& rhs )
 {
-   for( size_t i = 0; i < N; ++i )
-   {
-      lhs[ i ] -= rhs[ i ];
-   }
-   return lhs;
+   return float4{ lhs * rhs.x, lhs * rhs.y, lhs * rhs.z, lhs * rhs.w };
 }
 
-template<typename T, size_t N>
-GPU_HD Vector<T, N> operator*( const Vector<T, N>& lhs, const T& rhs )
+GPU_HD inline float4 operator/( const float4& lhs, float rhs )
 {
-   Vector<T, N> result;
-   for( size_t i = 0; i < N; ++i )
-   {
-      result[ i ] = lhs[ i ] * rhs;
-   }
-   return result;
+   return float4{ lhs.x / rhs, lhs.y / rhs, lhs.z / rhs, lhs.w / rhs };
 }
 
-template<typename T, size_t N>
-GPU_HD Vector<T, N> operator*( const T& lhs, const Vector<T, N>& rhs )
+GPU_HD inline bool operator==( const float4& lhs, const float4& rhs )
 {
-   Vector<T, N> result;
-   for( size_t i = 0; i < N; ++i )
-   {
-      result[ i ] = lhs * rhs[ i ];
-   }
-   return result;
+   return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z && lhs.w == rhs.w;
 }
 
-template<typename T, size_t N>
-GPU_HD Vector<T, N>& operator*=( Vector<T, N>& lhs, const T& rhs )
-{
-   for( size_t i = 0; i < N; ++i )
-   {
-      lhs[ i ] *= rhs;
-   }
-   return lhs;
-}
-
-template<typename T, size_t N>
-GPU_HD Vector<T, N> operator/( const Vector<T, N>& lhs, const T& rhs )
-{
-   Vector<T, N> result;
-   for( size_t i = 0; i < N; ++i )
-   {
-      result[ i ] = lhs[ i ] / rhs;
-   }
-   return result;
-}
-
-template<typename T, size_t N>
-GPU_HD Vector<T, N>& operator/=( Vector<T, N>& lhs, const T& rhs )
-{
-   for( size_t i = 0; i < N; ++i )
-   {
-      lhs[ i ] /= rhs;
-   }
-   return lhs;
-}
-
-template<typename T, size_t N>
-GPU_HD bool operator==( const Vector<T, N>& lhs, const Vector<T, N>& rhs )
-{
-   for( size_t i = 0; i < N; ++i )
-   {
-      if( lhs[ i ] != rhs[ i ] ) return false;
-   }
-   return true;
-}
-
-template<typename T, size_t N>
-GPU_HD bool operator!=( const Vector<T, N>& lhs, const Vector<T, N>& rhs )
+GPU_HD inline bool operator!=( const float4& lhs, const float4& rhs )
 {
    return !( lhs == rhs );
 }
-
-typedef Vector3<double> Vector3d;
-typedef Vector3<float> Vector3f;
-typedef Vector3<int> Vector3i;
-
-typedef Vector4<double> Vector4d;
-typedef Vector4<float> Vector4f;
-typedef Vector4<int> Vector4i;
 
 #endif //GPURAYTRACER_VECTOR_H

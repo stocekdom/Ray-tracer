@@ -13,7 +13,7 @@ struct Viewport
    float height;
    float pixelWidth;
    float pixelHeight;
-   Vector3f bottomLeftCorner;
+   float4 bottomLeftCorner;
 };
 
 #endif //GPURAYTRACER_VIEWPORT_H
