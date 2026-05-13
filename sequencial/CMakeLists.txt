@@ -18,4 +18,7 @@ add_executable(sequencial main.cpp
         Objects.cpp
         lodepng.h
         lodepng.cpp
+        Levels.h
+        Levels.cpp
+        TracerOptions.h
 )
